@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Firefly Academy</title>
+  
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950">
+  <!-- This is where our React app will be injected -->
+  <div id="root"></div>
+
+  <!-- Import Maps tell the browser where to download the React and Icon packages from -->
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.294.0?external=react"
+      }
+    }
+  </script>
+
+  <!-- Babel compiles the React JSX syntax so the browser can read it -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Our Application Code -->
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useMemo, useRef } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { 
+      Bug, Map as MapIcon, ShieldCheck, Award, Zap, LightbulbOff, 
+      MapPin, CheckCircle, AlertTriangle, ArrowRight, Star, Info, Target, Leaf, Globe, HeartHandshake, HelpCircle, RefreshCw, Flame,
+      Fish, Waves, Trees, Sprout, Snail, Scissors, Dna, Palette, Clock, Mountain,
+      Search, FileText, Building, Car, Flashlight
+    } from 'lucide-react';
+
+    // Custom CSS for scientifically accurate(ish) firefly flashing animations
+    const FireflyStyles = () => (
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes snappy {
+          0%, 100% { opacity: 1; box-shadow: 0 0 20px #eab308; }
+          50% { opacity: 0; box-shadow: 0 0 0px #eab308; }
+        }
+        .animate-snappy { animation: snappy 0.85s linear infinite; }
+
+        @keyframes smoky {
+          0%, 4%, 8%, 12%, 16%, 20% { opacity: 1; box-shadow: 0 0 20px #eab308; }
+          2%, 6%, 10%, 14%, 18% { opacity: 0; box-shadow: 0 0 0px #eab308; }
+          21%, 100% { opacity: 0; box-shadow: 0 0 0px #eab308; }
+        }
+        .animate-smoky { animation: smoky 8s linear infinite; }
+
+        @keyframes desert {
+          0%, 5%, 10% { opacity: 1; box-shadow: 0 0 20px #fde047; }
+          2.5%, 7.5% { opacity: 0; box-shadow: 0 0 0px #fde047; }
+          11%, 100% { opacity: 0; box-shadow: 0 0 0px #fde047; }
+        }
+        .animate-desert { animation: desert 6s linear infinite; }
+
+        @keyframes ghost {
+          0%, 100% { opacity: 0.2; box-shadow: 0 0 10px #22d3ee; }
+          50% { opacity: 1; box-shadow: 0 0 30px #22d3ee; background-color: #22d3ee; }
+        }
+        .animate-ghost { animation: ghost 4s ease-in-out infinite; }
+        
+        @keyframes predator {
+          0%, 6%, 12% { opacity: 1; box-shadow: 0 0 20px #ef4444; }
+          3%, 9% { opacity: 0; box-shadow: 0 0 0px #ef4444; }
+          13%, 100% { opacity: 0; box-shadow: 0 0 0px #ef4444; }
+        }
+        .animate-predator { animation: predator 5s linear infinite; }
+
+        @keyframes genji {
+          0%, 100% { opacity: 0.3; box-shadow: 0 0 5px #4ade80; }
+          50% { opacity: 1; box-shadow: 0 0 25px #4ade80; }
+        }
+        .animate-genji { animation: genji 2s ease-in-out infinite; }
+
+        @keyframes giant {
+          0%, 100% { opacity: 0.5; box-shadow: 0 0 20px #10b981; transform: scale(1); }
+          50% { opacity: 1; box-shadow: 0 0 50px #10b981; transform: scale(1.5); }
+        }
+        .animate-giant { animation: giant 10s ease-in-out infinite; }
+
+        /* Larval crawling animation */
+        @keyframes crawl {
+          0%, 100% { transform: scaleX(1); }
+          50% { transform: scaleX(0.8) translateX(10px); }
+        }
+        .animate-crawl { animation: crawl 1.5s ease-in-out infinite; }
+
+        /* Interactive visual animations */
+        @keyframes fallDown {
+          0% { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(180px) rotate(360deg); opacity: 0; }
+        }
+        .animate-fall { animation: fallDown 0.8s ease-in forwards; }
+
+        @keyframes chomp {
+          0%, 100% { transform: scale(1); }
+          25% { transform: scale(1.2) rotate(-10deg) translateX(-5px); }
+          75% { transform: scale(1.2) rotate(10deg) translateX(-5px); }
+        }
+        .animate-chomp { animation: chomp 0.3s ease-in-out infinite; }
+
+        .twinkle-bg {
+          background-image: 
+            radial-gradient(circle at 15% 50%, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+            radial-gradient(circle at 85% 30%, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+            radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.08) 2px, transparent 2px);
+          background-size: 100px 100px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.8); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 1); }
+      `}} />
+    );
+
+    function App() {
+      const [currentStage, setCurrentStage] = useState(0);
+      const [badges, setBadges] = useState([]);
+      
+      const addBadge = (badgeName) => {
+        if (!badges.includes(badgeName)) setBadges([...badges, badgeName]);
+      };
+
+      const nextStage = () => setCurrentStage(prev => Math.min(prev + 1, 10));
+
+      const stages = [
+        { id: 'intro', title: "Start Journey", icon: <Zap size={20} /> },
+        { id: 'science', title: "Bioluminescence", icon: <LightbulbOff size={20} /> },
+        { id: 'species', title: "Meet the Bugs", icon: <Bug size={20} /> },
+        { id: 'map', title: "Global Map", icon: <Globe size={20} /> },
+        { id: 'tamagotchi', title: "Raise a Firefly", icon: <Sprout size={20} /> },
+        { id: 'buildabug', title: "Build-a-Bug", icon: <Dna size={20} /> },
+        { id: 'researcher', title: "Field Survey", icon: <Search size={20} /> },
+        { id: 'pollution', title: "Light Pollution", icon: <Flashlight size={20} /> },
+        { id: 'ecosystem', title: "Ecosystem Role", icon: <Leaf size={20} /> },
+        { id: 'trivia', title: "100 Fun Facts", icon: <HelpCircle size={20} /> },
+        { id: 'conservation', title: "Ranger Test", icon: <ShieldCheck size={20} /> },
+      ];
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-yellow-500/30 flex flex-col relative overflow-hidden twinkle-bg">
+          <FireflyStyles />
+          
+          <header className="p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 shadow-lg">
+            <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-500/20 rounded-xl border border-yellow-500/30">
+                  <Bug className="text-yellow-400" size={28} />
+                </div>
+                <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-green-400">
+                  Global Firefly Academy
+                </h1>
+              </div>
+              
+              <div className="flex items-center gap-2 bg-slate-800/50 p-2 rounded-full px-4 border border-slate-700/50 overflow-x-auto custom-scrollbar">
+                <span className="text-sm font-bold text-slate-300 mr-2 uppercase tracking-wider shrink-0">Badges:</span>
+                {[...Array(11)].map((_, i) => (
+                  <div key={i} className={`w-6 h-6 sm:w-8 sm:h-8 shrink-0 rounded-full flex items-center justify-center transition-all duration-500 ${badges.length > i ? 'bg-yellow-400 text-slate-900 shadow-[0_0_10px_rgba(250,204,21,0.6)] scale-110' : 'bg-slate-800 text-slate-600 border border-slate-700'}`}>
+                    <Star size={14} fill={badges.length > i ? "currentColor" : "none"} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+            {/* Progress Bar */}
+            <div className="flex justify-between items-center mb-8 relative hidden md:flex">
+              <div className="absolute left-0 right-0 top-1/2 h-1 bg-slate-800 -z-10 rounded-full"></div>
+              <div className="absolute left-0 top-1/2 h-1 bg-gradient-to-r from-yellow-400 to-green-400 -z-10 rounded-full transition-all duration-500" style={{ width: `${(currentStage / (stages.length - 1)) * 100}%` }}></div>
+              
+              {stages.map((stage, idx) => {
+                const isCompleted = badges.includes(stage.title);
+                const isCurrent = currentStage === idx;
+                return (
+                  <button 
+                    key={stage.id}
+                    onClick={() => setCurrentStage(idx)}
+                    className="flex flex-col items-center gap-2 transition-all hover:scale-110 group cursor-pointer"
+                  >
+                    <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center border-4 transition-transform duration-300 ${isCurrent ? 'bg-slate-900 border-yellow-400 text-yellow-400 scale-125 shadow-[0_0_15px_rgba(250,204,21,0.5)]' : isCompleted ? 'bg-green-500 border-green-400 text-slate-900' : 'bg-slate-800 border-slate-600 text-slate-400 group-hover:border-slate-400'}`}>
+                      {isCompleted && !isCurrent ? <CheckCircle size={18} /> : stage.icon}
+                    </div>
+                    <span className={`text-[10px] lg:text-xs font-bold px-2 rounded-md whitespace-nowrap ${isCurrent ? 'bg-slate-900 text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{stage.title}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Stage Renderer */}
+            <div className="flex-1 flex flex-col relative min-h-0">
+              {currentStage === 0 && <StageIntro onComplete={() => { addBadge(stages[0].title); nextStage(); }} />}
+              {currentStage === 1 && <StageScience onComplete={() => { addBadge(stages[1].title); nextStage(); }} />}
+              {currentStage === 2 && <StageSpecies onComplete={() => { addBadge(stages[2].title); nextStage(); }} />}
+              {currentStage === 3 && <StageMap onComplete={() => { addBadge(stages[3].title); nextStage(); }} />}
+              {currentStage === 4 && <StageTamagotchi onComplete={() => { addBadge(stages[4].title); nextStage(); }} />}
+              {currentStage === 5 && <StageBuildABug onComplete={() => { addBadge(stages[5].title); nextStage(); }} />}
+              {currentStage === 6 && <StageResearcher onComplete={() => { addBadge(stages[6].title); nextStage(); }} />}
+              {currentStage === 7 && <StageLightPollution onComplete={() => { addBadge(stages[7].title); nextStage(); }} />}
+              {currentStage === 8 && <StageEcosystem onComplete={() => { addBadge(stages[8].title); nextStage(); }} />}
+              {currentStage === 9 && <StageTrivia onComplete={() => { addBadge(stages[9].title); nextStage(); }} />}
+              {currentStage === 10 && <StageConservation badges={badges} addBadge={addBadge} />}
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    // --- STAGE 1: INTRO ---
+    function StageIntro({ onComplete }) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500">
+          <div className="relative p-4">
+            <div className="absolute inset-0 bg-yellow-400 blur-3xl opacity-30 rounded-full animate-pulse"></div>
+            <Bug size={140} className="text-yellow-400 relative z-10 animate-bounce drop-shadow-[0_0_30px_rgba(250,204,21,1)]" />
+          </div>
+          <div className="max-w-2xl bg-slate-800/60 p-8 rounded-3xl border border-slate-700 backdrop-blur-sm">
+            <h2 className="text-4xl sm:text-5xl font-black mb-4 text-white">Welcome, Global Entomologist!</h2>
+            <p className="text-lg text-slate-300 mb-6 leading-relaxed">
+              You are entering the world of <strong>Lampyridae</strong>, a family of insects commonly known as fireflies. Scientists have documented over 2,000 distinct species globally—not just in the USA, but across Asia, Europe, and the tropics!
+              <br/><br/>
+              Your mission is to study their brilliant chemical reactions, decode their international flash patterns, and learn how to protect their fragile habitats.
+            </p>
+            <button onClick={onComplete} className="group relative inline-flex items-center justify-center px-8 py-4 font-bold text-slate-900 bg-yellow-400 rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(250,204,21,0.4)]">
+              <span className="absolute w-0 h-0 transition-all duration-500 ease-out bg-white rounded-full group-hover:w-56 group-hover:h-56 opacity-20"></span>
+              <span className="relative flex items-center gap-2 text-lg">Begin Global Research <ArrowRight size={20} /></span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 2: SCIENCE ---
+    function StageScience({ onComplete }) {
+      const [mixed, setMixed] = useState(false);
+
+      return (
+        <div className="flex flex-col items-center justify-center space-y-8 animate-in slide-in-from-right duration-500">
+          <div className="text-center max-w-3xl">
+            <h2 className="text-3xl font-black mb-4 text-green-400">The Biochemistry of Cold Light</h2>
+            <p className="text-lg text-slate-300">
+              Fireflies don't use electricity. They create light using a highly efficient chemical reaction called <strong>Bioluminescence</strong>.
+            </p>
+          </div>
+
+          <div className="bg-slate-800/80 p-6 sm:p-8 rounded-3xl border border-slate-700 w-full max-w-4xl flex flex-col items-center">
+            <p className="text-xl font-bold mb-8 text-center">Combine the biochemical ingredients in the firefly's abdomen!</p>
+            
+            <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-6 mb-8 w-full">
+              <div className="flex flex-col items-center gap-2">
+                <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center border-4 border-slate-600 bg-slate-700 text-3xl transition-transform ${mixed ? 'scale-90 opacity-50' : 'animate-bounce'}`}>🧪</div>
+                <span className="font-bold text-yellow-300">Luciferin</span>
+              </div>
+              <span className="text-3xl font-black text-slate-500">+</span>
+              <div className="flex flex-col items-center gap-2">
+                <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center border-4 border-slate-600 bg-slate-700 text-3xl transition-transform ${mixed ? 'scale-90 opacity-50' : 'animate-bounce'} delay-75`}>🧬</div>
+                <span className="font-bold text-purple-300">Luciferase</span>
+              </div>
+              <span className="text-3xl font-black text-slate-500">+</span>
+              <div className="flex flex-col items-center gap-2">
+                <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center border-4 border-slate-600 bg-slate-700 text-3xl transition-transform ${mixed ? 'scale-90 opacity-50' : 'animate-bounce'} delay-150`}>💨</div>
+                <span className="font-bold text-blue-300">Oxygen</span>
+              </div>
+              <span className="text-3xl font-black text-slate-500 w-full text-center sm:w-auto my-2 sm:my-0">=</span>
+              
+              <div className="relative cursor-pointer group mt-4 sm:mt-0" onClick={() => setMixed(true)}>
+                <div className={`absolute inset-0 bg-yellow-400 blur-2xl rounded-full transition-all duration-1000 ${mixed ? 'opacity-60 scale-150' : 'opacity-0 scale-50'}`}></div>
+                <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-3xl flex flex-col items-center justify-center border-4 transition-all duration-1000 relative z-10 ${mixed ? 'border-yellow-400 bg-slate-900 shadow-[0_0_30px_rgba(250,204,21,0.8)]' : 'border-slate-600 bg-slate-800 hover:border-slate-500'}`}>
+                  <Bug className={`w-14 h-14 sm:w-16 sm:h-16 transition-colors duration-1000 ${mixed ? 'text-yellow-400' : 'text-slate-600'}`} />
+                  {!mixed && <span className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-wider group-hover:text-white">Catalyze!</span>}
+                </div>
+              </div>
+            </div>
+
+            {mixed && (
+              <div className="animate-in zoom-in duration-500 w-full mt-4 flex flex-col gap-4">
+                <div className="text-center bg-slate-900 p-6 rounded-2xl border border-slate-700">
+                  <h3 className="text-xl font-black text-yellow-400 mb-2 flex items-center justify-center gap-2">
+                    <Zap size={20} /> 100% Efficient "Cold Light"
+                  </h3>
+                  <p className="text-slate-300 text-sm">
+                    The rapid oxidation of luciferin is powered by <strong>ATP</strong> (adenosine triphosphate). It creates virtually no thermal energy! If fireflies produced heat like a standard lightbulb, they would fatally overheat.
+                  </p>
+                </div>
+
+                <div className="bg-slate-800/80 p-5 rounded-3xl border border-slate-700 text-left relative overflow-hidden">
+                  <h3 className="text-lg font-black text-blue-400 mb-3 flex items-center gap-2">
+                    <Globe size={18} className="shrink-0" /> Bioluminescence Across Nature
+                  </h3>
+                  <p className="text-xs text-slate-300 mb-4">Other creatures glow too, but their methods and reasons are completely different from the firefly's courtship flashes!</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 relative z-10">
+                    <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 hover:border-cyan-500/50 transition-colors">
+                      <h4 className="text-cyan-400 font-bold mb-2 flex items-center gap-2"><Fish size={16} /> Deep Sea Anglerfish</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed"><strong className="text-slate-400">Source:</strong> Symbiotic glowing bacteria living in their lure.<br/><strong className="text-slate-400">Purpose:</strong> Baiting prey in pitch blackness.</p>
+                    </div>
+                    
+                    <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 hover:border-teal-400/50 transition-colors">
+                      <h4 className="text-teal-400 font-bold mb-2 flex items-center gap-2"><Waves size={16} /> Marine Plankton</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed"><strong className="text-slate-400">Source:</strong> Synthesize own chemicals (like dinoflagellates).<br/><strong className="text-slate-400">Purpose:</strong> "Burglar alarm" to startle predators when bumped.</p>
+                    </div>
+                    
+                    <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 hover:border-green-400/50 transition-colors">
+                      <h4 className="text-green-400 font-bold mb-2 flex items-center gap-2"><Trees size={16} /> Foxfire (Fungi)</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed"><strong className="text-slate-400">Source:</strong> Constant metabolic breakdown of wood.<br/><strong className="text-slate-400">Purpose:</strong> Attracting insects to help spread their spores.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={onComplete} className="mt-2 px-6 py-3 font-bold text-slate-900 bg-green-400 rounded-full hover:bg-green-300 transition-colors flex items-center justify-center gap-2 mx-auto shadow-[0_0_15px_rgba(74,222,128,0.4)]">
+                  Analyze Global Species <ArrowRight size={20} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 3: GLOBAL SPECIES ANIMATIONS ---
+    function StageSpecies({ onComplete }) {
+      const [activeSpecies, setActiveSpecies] = useState(null);
+
+      const speciesList = [
+        { id: 'smoky', name: 'Smoky Mountain Sync', scientific: 'Photinus carolinus', location: 'USA', color: 'bg-orange-400', description: 'Found in US mature hardwood forests. Males flash 5-10 times, followed by an awe-inspiring 6-10 seconds of absolute darkness.', animClass: 'animate-smoky', bugColor: 'text-orange-400' },
+        { id: 'genji', name: 'Genji-botaru', scientific: 'Luciola cruciata', location: 'Japan', color: 'bg-green-400', description: 'A culturally revered Japanese firefly. Unlike most species, its larvae are fully AQUATIC, hunting snails underwater in clean streams!', animClass: 'animate-genji', bugColor: 'text-green-400' },
+        { id: 'mangrove', name: 'Mangrove Sync', scientific: 'Pteroptyx tener', location: 'Malaysia', color: 'bg-yellow-300', description: 'In Southeast Asia, these fireflies gather in the tens of thousands in specific mangrove trees along rivers, flashing in perfect unison.', animClass: 'animate-snappy', bugColor: 'text-yellow-300' },
+        { id: 'giant', name: 'Giant Glowworm', scientific: 'Lamprigera spp.', location: 'Southeast Asia', color: 'bg-emerald-400', description: 'The females are flightless and HUGE (the size of a mouse!). They emit a massive, continuous glowing aura from the forest floor to attract flying males.', animClass: 'animate-giant', bugColor: 'text-emerald-400' },
+        { id: 'desert', name: 'Southwest Sync', scientific: 'Photinus knulli', location: 'USA', color: 'bg-yellow-200', description: 'An arid anomaly! Endemic to Arizona desert riparian zones. They only emerge in August after the North American Monsoon rains.', animClass: 'animate-desert', bugColor: 'text-yellow-200' },
+        { id: 'femme', name: 'Femme Fatale', scientific: 'Photuris versicolor', location: 'Americas', color: 'bg-red-500', description: 'A predatory mimic! The females copy the flash responses of other species to lure in unsuspecting males... and then consume them!', animClass: 'animate-predator', bugColor: 'text-red-500' }
+      ];
+
+      return (
+        <div className="flex flex-col space-y-4 animate-in slide-in-from-right duration-500 h-full min-h-0">
+          <div className="flex flex-col sm:flex-row gap-4 items-center bg-blue-900/20 border border-blue-900/50 p-4 rounded-2xl shrink-0">
+            <Globe className="text-blue-400 shrink-0" size={36} />
+            <div>
+              <h3 className="font-bold text-blue-300">A Global Phenomenon</h3>
+              <p className="text-sm text-slate-300">While US synchronous fireflies are famous, incredible species exist worldwide. From aquatic larvae in Japan to giant glowworms in Asia, evolution has created amazing diversity.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar">
+              {speciesList.map((species) => (
+                <button key={species.id} onClick={() => setActiveSpecies(species)} className={`p-3 rounded-2xl border-2 text-left transition-all flex items-center justify-between group shrink-0 ${activeSpecies?.id === species.id ? `bg-slate-800 ${species.color.replace('bg-', 'border-')}` : 'bg-slate-900 border-slate-700 hover:border-slate-500'}`}>
+                  <div>
+                    <h3 className={`font-bold text-base ${activeSpecies?.id === species.id ? 'text-white' : 'text-slate-300'}`}>{species.name} <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full ml-1 border border-slate-700 text-slate-400">{species.location}</span></h3>
+                    <p className="text-xs text-slate-500 italic">{species.scientific}</p>
+                  </div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-slate-800 border-2 shrink-0 ml-2 ${activeSpecies?.id === species.id ? species.color.replace('bg-', 'border-') : 'border-slate-700'}`}>
+                    <Bug className={activeSpecies?.id === species.id ? species.bugColor : 'text-slate-500'} size={18} />
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl p-4 sm:p-6 relative overflow-hidden flex flex-col h-full">
+              {activeSpecies ? (
+                <>
+                  <div className="relative h-40 bg-slate-950 rounded-2xl mb-4 overflow-hidden border border-slate-800 flex items-center justify-center shrink-0">
+                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-green-900/20 to-transparent"></div>
+                    <div className="absolute inset-0">
+                      {[...Array(activeSpecies.id === 'giant' ? 1 : 15)].map((_, i) => (
+                        <div 
+                          key={i}
+                          className={`absolute rounded-full bg-slate-600 ${activeSpecies.animClass}`}
+                          style={{
+                            width: activeSpecies.id === 'giant' ? '40px' : '10px',
+                            height: activeSpecies.id === 'giant' ? '40px' : '10px',
+                            top: activeSpecies.id === 'giant' ? '70%' : `${Math.random() * 70 + 10}%`,
+                            left: activeSpecies.id === 'giant' ? '50%' : `${Math.random() * 80 + 10}%`,
+                            animationDelay: (activeSpecies.id === 'smoky' || activeSpecies.id === 'mangrove') ? '0s' : `${Math.random() * 2}s`
+                          }}
+                        ></div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                    <h3 className={`text-xl sm:text-2xl font-black mb-1 ${activeSpecies.bugColor}`}>{activeSpecies.name}</h3>
+                    <p className="text-sm text-slate-400 italic mb-3">{activeSpecies.scientific}</p>
+                    <p className="text-slate-300 text-sm leading-relaxed bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">{activeSpecies.description}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-500 text-center p-8">
+                  <LightbulbOff size={64} className="mb-4 opacity-20" />
+                  <p className="font-bold text-lg">Select a global species to study its pattern!</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2 shrink-0">
+            <button onClick={onComplete} className="px-6 py-3 font-bold rounded-full transition-all flex items-center gap-2 bg-yellow-400 text-slate-900 hover:bg-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+              View Global Map <ArrowRight size={20} />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 4: GLOBAL MAP ---
+    function StageMap({ onComplete }) {
+      const [activeLocation, setActiveLocation] = useState(null);
+      const [mapView, setMapView] = useState('us'); // 'us' or 'global'
+
+      const usLocations = [
+        { id: 'congaree', name: "Congaree National Park", region: "South Carolina, USA", x: 73, y: 65, desc: "Immense tracts of old-growth bottomland hardwood forest provide the humid breeding ground needed for Snappy Syncs.", species: ["Snappy Sync (P. frontalis)"] },
+        { id: 'smoky', name: "Great Smoky Mountains", region: "Tennessee, USA", x: 67, y: 55, desc: "The US epicenter. Tens of thousands apply for a strict lottery to see synchronized darkness.", species: ["Smoky Mountain Sync (P. carolinus)", "Blue Ghost"] },
+        { id: 'allegheny', name: "Allegheny National Forest", region: "Pennsylvania, USA", x: 74, y: 32, desc: "A northern habitat discovered in 2012! Features late-season viewing unburdened by extreme Southern heat.", species: ["Smoky Mountain Sync", "Chinese Lantern Firefly"] },
+        { id: 'grandfather', name: "Grandfather Mountain", region: "North Carolina, USA", x: 71, y: 52, desc: "A high-altitude UNESCO Biosphere Reserve boasting immense biodiversity with 10 distinct species.", species: ["Smoky Mountain Sync", "Blue Ghost", "Winter Firefly"] },
+        { id: 'highbridge', name: "High Bridge Trail", region: "Virginia, USA", x: 77, y: 45, desc: "A novel viewing geometry: Visitors stand on a massive elevated bridge and look straight down into the treetops.", species: ["Synchronous Firefly (Suspected P. carolinus)"] },
+        { id: 'arizona', name: "Santa Rita Mountains", region: "Arizona, USA", x: 22, y: 65, desc: "Highly vulnerable desert leks! This population is deeply imperiled by encroaching light pollution.", species: ["Southwest Sync (P. knulli)"] }
+      ];
+
+      const globalLocations = [
+        { id: 'mexico', name: "Nanacamilpa Sanctuary", region: "Tlaxcala, Mexico", x: 18, y: 46, desc: "Thousands of hectares of pine/oyamel forest where Macrolampis palaciosi synchronize beautifully.", species: ["Macrolampis palaciosi"] },
+        { id: 'japan', name: "Uji River / Kyoto", region: "Kyoto, Japan", x: 86, y: 35, desc: "Home to the revered Genji-botaru. They require exceptionally clean, flowing water for their aquatic larvae.", species: ["Luciola cruciata (Genji)"] },
+        { id: 'malaysia', name: "Kampung Kuantan", region: "Selangor, Malaysia", x: 78, y: 55, desc: "One of the largest firefly colonies in the world. They congregate in specific Berembang (mangrove) trees.", species: ["Pteroptyx tener"] },
+        { id: 'italy', name: "Apennine Mountains", region: "Apennines, Italy", x: 52, y: 32, desc: "Italian fireflies studied since the 1800s. Males emit rapid flashes while flying over meadows looking for females.", species: ["Luciola italica"] },
+        { id: 'brazil', name: "Emas National Park", region: "Goiás, Brazil", x: 28, y: 65, desc: "Glowing termite mounds! Pyrearinus termitilluminans larvae live inside the mounds and glow to attract flying prey.", species: ["Pyrearinus termitilluminans"] }
+      ];
+
+      const activeLocationsList = mapView === 'us' ? usLocations : globalLocations;
+
+      return (
+        <div className="flex flex-col space-y-4 animate-in slide-in-from-right duration-500 h-full min-h-0">
+          <div className="text-center shrink-0">
+            <h2 className="text-3xl font-black mb-2 text-blue-400">Habitat Tracker</h2>
+            <p className="text-slate-300 mb-4">Select a location on the map to analyze habitats.</p>
+            
+            <div className="flex justify-center gap-2">
+              <button onClick={() => {setMapView('us'); setActiveLocation(null)}} className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${mapView === 'us' ? 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>United States</button>
+              <button onClick={() => {setMapView('global'); setActiveLocation(null)}} className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${mapView === 'global' ? 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Worldwide</button>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-0">
+            <div className="w-full md:w-3/5 bg-slate-900 border border-slate-700 rounded-3xl p-4 relative overflow-hidden flex items-center justify-center shrink-0 md:shrink">
+              
+              <div className="relative w-full max-w-[600px] opacity-80" style={{ aspectRatio: mapView === 'us' ? '5/3' : '2/1' }}>
+                {mapView === 'us' ? (
+                  <svg viewBox="0 0 1000 600" className="w-full h-full text-slate-800 drop-shadow-xl" fill="currentColor">
+                    <path d="M150,50 Q250,50 350,60 T550,80 T750,50 L850,70 Q900,100 950,150 L980,250 Q950,350 900,400 L850,500 L800,580 Q750,550 700,550 L650,580 Q550,550 450,580 L400,550 Q300,580 200,550 L150,500 L50,450 Q20,350 10,250 L30,150 Z" stroke="#334155" strokeWidth="4" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 100 50" className="w-full h-full text-slate-800 drop-shadow-xl" fill="currentColor">
+                    <path d="M5,10 Q25,5 30,20 Q20,30 15,45 Q5,30 5,10 Z" />
+                    <path d="M22,35 Q30,35 32,48 Q25,55 22,35 Z" />
+                    <path d="M45,15 Q65,5 90,15 Q95,30 80,40 Q65,35 45,30 Q40,20 45,15 Z" />
+                    <path d="M45,28 Q55,28 60,45 Q45,50 45,28 Z" />
+                    <path d="M80,42 Q90,42 90,48 Q80,50 80,42 Z" />
+                  </svg>
+                )}
+
+                {activeLocationsList.map((loc) => (
+                  <button
+                    key={loc.id}
+                    onClick={() => setActiveLocation(loc)}
+                    className={`absolute w-4 h-4 sm:w-6 sm:h-6 -ml-2 -mt-2 sm:-ml-3 sm:-mt-3 rounded-full flex items-center justify-center transition-all duration-300 z-10 
+                      ${activeLocation?.id === loc.id ? 'bg-yellow-400 scale-150 shadow-[0_0_15px_rgba(250,204,21,0.8)] z-20' : 'bg-blue-500 hover:bg-blue-400 hover:scale-125 shadow-[0_0_10px_rgba(59,130,246,0.6)]'}`}
+                    style={{ left: `${loc.x}%`, top: `${loc.y}%` }}
+                  >
+                    <div className={`w-1 h-1 sm:w-2 sm:h-2 rounded-full ${activeLocation?.id === loc.id ? 'bg-slate-900' : 'bg-white'}`}></div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="w-full md:w-2/5 flex flex-col min-h-0">
+              {activeLocation ? (
+                <div className="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 h-full flex flex-col animate-in fade-in duration-300 overflow-y-auto custom-scrollbar">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="p-3 bg-blue-900/40 text-blue-400 rounded-xl shrink-0"><MapPin size={24} /></div>
+                    <div>
+                      <h3 className="font-bold text-xl text-white leading-tight">{activeLocation.name}</h3>
+                      <span className="text-blue-400 font-bold text-sm">{activeLocation.region}</span>
+                    </div>
+                  </div>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-6">{activeLocation.desc}</p>
+                  <div className="mt-auto">
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Observable Species</h4>
+                    <div className="flex flex-col gap-2">
+                      {activeLocation.species.map((sp, idx) => (
+                        <div key={idx} className="bg-slate-900/80 border border-slate-700/50 p-2.5 rounded-lg flex items-center gap-3">
+                          <Bug size={16} className="text-yellow-500 shrink-0" />
+                          <span className="text-sm font-medium text-slate-200">{sp}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                 <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 h-full flex flex-col items-center justify-center text-center text-slate-500">
+                   <MapIcon size={48} className="mb-4 opacity-20" />
+                   <p>Tap a beacon on the map to view habitat data.</p>
+                 </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2 shrink-0">
+            <button onClick={onComplete} className="px-6 py-3 font-bold rounded-full transition-all flex items-center gap-2 bg-yellow-400 text-slate-900 hover:bg-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+              Play Tamagotchi <ArrowRight size={20} />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 5: LIFE-CYCLE TAMAGOTCHI ---
+    function StageTamagotchi({ onComplete }) {
+      const [gameState, setGameState] = useState('intro'); // intro, playing, gameover, success
+      const [month, setMonth] = useState(0);
+      const [hunger, setHunger] = useState(100);
+      const [leaves, setLeaves] = useState(100);
+      const [danger, setDanger] = useState(false);
+      const [deathReason, setDeathReason] = useState('');
+
+      // Interactive Visual States
+      const [activeSnails, setActiveSnails] = useState([]);
+      const [fallingLeaves, setFallingLeaves] = useState([]);
+      const [isEating, setIsEating] = useState(false);
+
+      const staticLeafPositions = useMemo(() => {
+        return Array.from({ length: 50 }).map(() => ({
+          left: Math.random() * 90 + 5, 
+          bottom: Math.random() * 25, 
+          rotation: Math.random() * 360,
+          color: ['text-orange-500', 'text-yellow-600', 'text-red-500', 'text-amber-500'][Math.floor(Math.random() * 4)]
+        }));
+      }, []);
+
+      useEffect(() => {
+        if (gameState !== 'playing') return;
+        const interval = setInterval(() => {
+          setMonth(prevMonth => {
+            const nextMonth = prevMonth + 1;
+            if (nextMonth >= 24) {
+              setGameState('success');
+              return 24;
+            }
+            return nextMonth;
+          });
+          setHunger(prev => {
+            const next = prev - (10 + Math.random() * 5);
+            if (next <= 0) {
+              setGameState('gameover');
+              setDeathReason('Your larva starved! As an apex micro-predator, it needs a constant supply of snails and slugs to grow.');
+            }
+            return Math.max(0, next);
+          });
+          setLeaves(prev => Math.max(0, prev - (8 + Math.random() * 4)));
+        }, 1500);
+        return () => clearInterval(interval);
+      }, [gameState]);
+
+      useEffect(() => {
+        if (gameState !== 'playing' || month === 0) return;
+        const isSummer = (month % 12 >= 3 && month % 12 <= 8);
+        let resolveTimer;
+
+        if (isSummer && Math.random() > 0.6) {
+          setDanger(true);
+          resolveTimer = setTimeout(() => {
+            setLeaves(latestLeaves => {
+              if (latestLeaves < 45 && gameState === 'playing') {
+                setGameState('gameover');
+                setDeathReason('BZZZZZZ! A lawnmower destroyed your habitat. You needed a thicker blanket of Leaf Litter (at least 45%) to hide safely in the soil.');
+              }
+              setDanger(false);
+              return latestLeaves;
+            });
+          }, 1200); 
+        }
+        return () => clearTimeout(resolveTimer);
+      }, [month, gameState]);
+
+      const handleFeed = () => {
+        if (gameState !== 'playing' || hunger >= 100) return;
+        const newSnail = { id: Date.now(), left: Math.random() * 40 + 30 }; 
+        setActiveSnails(prev => [...prev, newSnail]);
+        setTimeout(() => {
+          setIsEating(true);
+          setActiveSnails(prev => prev.filter(s => s.id !== newSnail.id));
+          setHunger(h => Math.min(100, h + 25));
+          setTimeout(() => setIsEating(false), 400); 
+        }, 500);
+      };
+
+      const handleAddLeaves = () => {
+        if (gameState !== 'playing' || leaves >= 100) return;
+        const newDrops = Array.from({ length: 4 }).map((_, i) => ({
+          id: Date.now() + i,
+          left: Math.random() * 80 + 10,
+          color: ['text-orange-400', 'text-yellow-400', 'text-red-400'][Math.floor(Math.random() * 3)]
+        }));
+        setFallingLeaves(prev => [...prev, ...newDrops]);
+        setTimeout(() => {
+          setFallingLeaves(prev => prev.filter(l => !newDrops.includes(l)));
+          setLeaves(l => Math.min(100, l + 20));
+        }, 800);
+      };
+
+      if (gameState === 'intro') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-500 h-full">
+            <div className="text-center shrink-0">
+              <Sprout size={80} className="text-green-400 mx-auto mb-4 animate-bounce" />
+              <h2 className="text-3xl sm:text-4xl font-black mb-2 text-white">Raise a Firefly!</h2>
+              <p className="text-slate-300 max-w-xl mx-auto mb-4 leading-relaxed">
+                Fireflies don't just appear in the summer. They spend <strong>95% of their lives (up to 2 years)</strong> as a tiny glowing larva in the soil.
+              </p>
+              <div className="bg-slate-800 p-6 rounded-2xl text-left max-w-xl mx-auto border border-slate-700">
+                <h3 className="font-bold text-yellow-400 mb-3 uppercase tracking-wider text-sm">Your Mission:</h3>
+                <ul className="space-y-3 text-sm text-slate-300">
+                  <li className="flex gap-3"><Snail className="text-blue-400 shrink-0" size={20}/> <strong>Drop Snails:</strong> Keep its energy bar full. Larvae are voracious carnivores!</li>
+                  <li className="flex gap-3"><Leaf className="text-orange-400 shrink-0" size={20}/> <strong>Leave the Leaves:</strong> Add leaves to build a thick pile to hide from summer lawnmowers!</li>
+                  <li className="flex gap-3"><HelpCircle className="text-purple-400 shrink-0" size={20}/> <strong>Survive 24 Months:</strong> Make it to adulthood to unlock the flight stage.</li>
+                </ul>
+              </div>
+            </div>
+            <button onClick={() => {setMonth(0); setHunger(100); setLeaves(100); setDanger(false); setGameState('playing');}} className="px-8 py-4 font-bold rounded-full transition-all flex items-center gap-2 bg-green-500 text-slate-900 hover:bg-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)] text-xl hover:scale-105">
+              Start Life Cycle
+            </button>
+          </div>
+        );
+      }
+
+      if (gameState === 'gameover') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-500 h-full text-center">
+            <div className="p-6 bg-red-900/30 rounded-full border-4 border-red-500/50 mb-2">
+              <AlertTriangle size={80} className="text-red-500" />
+            </div>
+            <h2 className="text-4xl font-black text-white">Habitat Failure</h2>
+            <p className="text-xl text-slate-300 max-w-lg">{deathReason}</p>
+            <p className="text-sm text-slate-400">Your larva survived for {month} months.</p>
+            <button onClick={() => setGameState('intro')} className="mt-4 px-6 py-3 rounded-full font-bold bg-slate-800 text-white hover:bg-slate-700 flex items-center gap-2"><RefreshCw size={18}/> Try Again</button>
+          </div>
+        );
+      }
+
+      if (gameState === 'success') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-1000 h-full text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-yellow-400 blur-[100px] opacity-20 rounded-full animate-pulse"></div>
+            
+            <div className="relative mb-4">
+              <Bug size={120} className="text-yellow-400 relative z-10 animate-snappy drop-shadow-[0_0_30px_rgba(250,204,21,1)]" />
+              {[...Array(6)].map((_,i) => (
+                 <div key={i} className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping" style={{top: `${Math.random()*100}%`, left: `${Math.random()*100}%`, animationDelay: `${i*0.2}s`}}></div>
+              ))}
+            </div>
+
+            <h2 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-green-400">Adulthood Achieved!</h2>
+            <p className="text-lg text-slate-300 max-w-xl leading-relaxed">
+              Incredible! After 2 long years in the dark soil, your firefly has emerged. It will only live for <strong>1 to 2 weeks</strong> in this beautiful adult stage to find a mate before it dies.
+            </p>
+            
+            <button onClick={onComplete} className="mt-4 z-10 px-8 py-4 font-bold rounded-full bg-yellow-400 text-slate-900 hover:bg-yellow-300 shadow-[0_0_20px_rgba(250,204,21,0.6)] flex items-center gap-2 text-lg hover:scale-105 transition-all">
+              Continue <ArrowRight size={20}/>
+            </button>
+          </div>
+        );
+      }
+
+      return (
+        <div className={`flex flex-col h-full rounded-3xl p-4 sm:p-6 transition-colors duration-300 border-4 ${danger ? 'bg-red-950/40 border-red-500' : 'bg-slate-900/80 border-slate-700'}`}>
+          <div className="flex justify-between items-center mb-6 shrink-0 bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
+            <div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Time in Soil</span>
+              <div className="text-2xl font-black text-white flex items-baseline gap-1">
+                {month} <span className="text-sm text-slate-400 font-bold">/ 24 Months</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Season</span>
+              <span className={`text-lg font-bold ${(month % 12 >= 3 && month % 12 <= 8) ? 'text-green-400' : 'text-blue-300'}`}>
+                {(month % 12 >= 3 && month % 12 <= 8) ? 'Spring/Summer' : 'Fall/Winter'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center justify-center relative min-h-[220px] mb-6 rounded-2xl border border-slate-800 overflow-hidden bg-gradient-to-b from-slate-900 to-green-950/20">
+            <div className="absolute inset-x-0 bottom-0 top-1/2">
+              {staticLeafPositions.slice(0, Math.floor(leaves / 2)).map((pos, i) => (
+                <Leaf key={i} className={`absolute ${pos.color} opacity-80 transition-all duration-300`} size={18} style={{ left: `${pos.left}%`, bottom: `${pos.bottom}%`, transform: `rotate(${pos.rotation}deg)` }} />
+              ))}
+            </div>
+
+            {fallingLeaves.map(leaf => (
+              <Leaf key={leaf.id} className={`absolute ${leaf.color} z-10 animate-fall`} size={20} style={{ left: `${leaf.left}%`, top: '-20px' }} />
+            ))}
+
+            {activeSnails.map(snail => (
+              <Snail key={snail.id} className="absolute text-blue-400 z-10 animate-fall" size={24} style={{ left: `${snail.left}%`, top: '-20px' }} />
+            ))}
+
+            <div className={`relative z-20 transition-transform duration-300 ${danger ? 'scale-90' : 'scale-100'} ${isEating ? 'animate-chomp' : 'animate-crawl'} flex items-center mt-auto mb-10`}>
+              <div className={`absolute -left-2 top-0 w-3 h-3 border-l-4 border-t-4 border-slate-400 rounded-tl-full transition-all ${isEating ? 'rotate-12 translate-y-1' : 'rotate-[-20deg]'}`}></div>
+              <div className={`absolute -left-2 bottom-0 w-3 h-3 border-l-4 border-b-4 border-slate-400 rounded-bl-full transition-all ${isEating ? '-rotate-12 -translate-y-1' : 'rotate-[20deg]'}`}></div>
+              <div className="w-24 h-8 bg-green-900 rounded-full border-2 border-green-700 flex justify-end items-center px-1 shadow-[inset_0_-4px_6px_rgba(0,0,0,0.4)]">
+                <div className="w-5 h-5 bg-green-400 rounded-full animate-pulse shadow-[0_0_15px_rgba(74,222,128,0.8)]"></div>
+              </div>
+            </div>
+
+            {danger && (
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-red-900/30 animate-in fade-in">
+                <Scissors size={64} className="text-red-500 animate-shake mb-2" />
+                <span className="bg-red-500 text-white font-black px-4 py-1 rounded-full uppercase tracking-widest animate-pulse">Lawnmower Approaching!</span>
+              </div>
+            )}
+          </div>
+
+          <div className="shrink-0 flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col justify-between">
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-bold text-slate-300 flex items-center gap-2"><Snail size={16} className="text-blue-400"/> Energy</span>
+                <span className={`font-bold ${hunger < 30 ? 'text-red-400 animate-pulse' : 'text-blue-400'}`}>{Math.round(hunger)}%</span>
+              </div>
+              <div className="w-full h-3 bg-slate-900 rounded-full mb-4 overflow-hidden">
+                <div className={`h-full transition-all duration-300 ${hunger < 30 ? 'bg-red-500' : 'bg-blue-500'}`} style={{width: `${hunger}%`}}></div>
+              </div>
+              <button onClick={handleFeed} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md flex justify-center gap-2">
+                <Snail size={20}/> Drop Snail
+              </button>
+            </div>
+
+            <div className="flex-1 bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col justify-between">
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-bold text-slate-300 flex items-center gap-2"><Leaf size={16} className="text-orange-400"/> Leaf Litter</span>
+                <span className={`font-bold ${leaves < 45 ? 'text-red-400 animate-pulse' : 'text-orange-400'}`}>{Math.round(leaves)}%</span>
+              </div>
+              <div className="w-full h-3 bg-slate-900 rounded-full mb-4 overflow-hidden">
+                <div className={`h-full transition-all duration-300 ${leaves < 45 ? 'bg-red-500' : 'bg-orange-500'}`} style={{width: `${leaves}%`}}></div>
+              </div>
+              <button onClick={handleAddLeaves} className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-xl transition-all active:scale-95 shadow-md flex justify-center gap-2">
+                <Leaf size={20}/> Drop Leaves
+              </button>
+            </div>
+          </div>
+          
+          <div className="mt-4 text-center">
+             <button onClick={onComplete} className="text-xs text-slate-500 hover:text-white transition-colors underline">Skip Mini-Game</button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 6: BUILD-A-BUG EVOLUTIONARY SANDBOX ---
+    function StageBuildABug({ onComplete }) {
+      const [color, setColor] = useState('yellow'); 
+      const [interval, setInterval] = useState('delayed'); 
+      const [habitat, setHabitat] = useState('forest'); 
+      
+      const [gameState, setGameState] = useState('building'); 
+      const [result, setResult] = useState(null);
+
+      const runSimulation = () => {
+        setGameState('simulating');
+        setTimeout(() => {
+           let success = false; let title = ""; let explanation = "";
+           if (habitat === 'forest' && interval === 'continuous' && color === 'blue') {
+             success = true; title = "Evolutionary Success: The Blue Ghost!"; explanation = "Perfect adaptation! Your continuous blue-green glow travels exceptionally well through the dense forest understory, and hovering close to the ground helps you avoid canopy predators.";
+           } else if (habitat === 'forest' && interval === 'delayed' && (color === 'yellow' || color === 'green')) {
+             success = true; title = "Evolutionary Success: The Smoky Mountain Sync!"; explanation = "Perfect adaptation! The dark pauses in your delayed flashing pattern cut through the intense visual 'noise' of the dense forest, allowing females to perfectly spot your signal.";
+           } else if (habitat === 'swamp' && interval === 'strobe' && (color === 'yellow' || color === 'green')) {
+             success = true; title = "Evolutionary Success: The Snappy Sync!"; explanation = "Perfect adaptation! Rapid strobing works wonderfully in the flat, humid expanse of a swamp, creating a continuous, unmistakable wave of light that easily attracts mates.";
+           } else if (habitat === 'desert' && interval === 'delayed' && color === 'yellow') {
+             success = true; title = "Evolutionary Success: The Southwest Sync!"; explanation = "Perfect adaptation! By using a delayed pulse, you conserve precious energy and water in the harsh desert environment, emerging only when the monsoons arrive.";
+           } else if (interval === 'continuous' && habitat === 'desert') {
+             success = false; title = "Evolutionary Failure: Energy Depletion"; explanation = "You dried out and became an easy snack! Maintaining a continuous light in a resource-poor desert drains your energy too fast and makes you a permanent beacon for predators.";
+           } else if (interval === 'strobe' && habitat === 'forest') {
+             success = false; title = "Evolutionary Failure: Signal Clutter"; explanation = "Too much visual noise! In a dense forest, rapid strobing just blends into the background clutter. Females couldn't distinguish your signal from the busy environment.";
+           } else if (color === 'blue' && habitat === 'swamp') {
+             success = false; title = "Evolutionary Failure: Wavelength Scattering"; explanation = "Wrong wavelength! Blue light scatters poorly through the thick ground fog of a swamp over long distances. Females couldn't see you, and you failed to find a mate.";
+           } else {
+             success = false; title = "Evolutionary Failure: Out-Competed"; explanation = "Your specific combination of traits wasn't perfectly suited for this environment. You were out-competed for mates by more specialized species and quickly eaten by nocturnal predators.";
+           }
+           setResult({ success, title, explanation });
+           setGameState('result');
+        }, 2500);
+      };
+
+      const getBgColor = () => {
+        if(habitat === 'forest') return 'bg-green-950/80 border-green-800';
+        if(habitat === 'swamp') return 'bg-teal-950/80 border-teal-800';
+        return 'bg-orange-950/80 border-orange-800';
+      }
+      const getBugColor = () => {
+        if(color === 'green') return 'text-green-400 drop-shadow-[0_0_15px_rgba(74,222,128,0.8)]';
+        if(color === 'blue') return 'text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]';
+        return 'text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]';
+      }
+      const getAnimClass = () => {
+        if(interval === 'continuous') return 'animate-ghost';
+        if(interval === 'strobe') return 'animate-snappy';
+        return 'animate-smoky';
+      }
+
+      if (gameState === 'simulating') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-500 h-full text-center">
+            <Dna size={100} className="text-blue-400 animate-spin" style={{ animationDuration: '3s' }} />
+            <h2 className="text-3xl font-black text-white">Running Evolution Simulation...</h2>
+            <p className="text-lg text-slate-300">Testing your firefly against predators, weather, and competition...</p>
+            <div className="w-64 h-2 bg-slate-800 rounded-full overflow-hidden mt-4">
+              <div className="h-full bg-blue-400 w-full animate-pulse"></div>
+            </div>
+          </div>
+        );
+      }
+
+      if (gameState === 'result') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-700 h-full text-center">
+            <div className="relative mb-2">
+              <div className={`absolute inset-0 blur-3xl opacity-30 rounded-full animate-pulse ${result.success ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              {result.success ? <Award size={100} className="text-yellow-400 relative z-10 animate-bounce drop-shadow-[0_0_20px_rgba(250,204,21,1)]" /> : <AlertTriangle size={100} className="text-red-500 relative z-10 animate-shake" />}
+            </div>
+            <h2 className={`text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r ${result.success ? 'from-green-400 to-yellow-400' : 'from-orange-400 to-red-400'}`}>{result.title}</h2>
+            <div className="bg-slate-800/80 border border-slate-700 p-6 rounded-2xl max-w-2xl shadow-xl">
+              <p className="text-lg text-slate-200 leading-relaxed">{result.explanation}</p>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button onClick={() => setGameState('building')} className="px-6 py-3 rounded-full font-bold bg-slate-800 text-white hover:bg-slate-700 flex items-center gap-2 transition-all"><RefreshCw size={18}/> Mutate & Try Again</button>
+              <button onClick={onComplete} className="px-6 py-3 rounded-full font-bold bg-yellow-400 text-slate-900 hover:bg-yellow-300 flex items-center gap-2 shadow-[0_0_15px_rgba(250,204,21,0.5)] hover:scale-105 transition-all">Continue <ArrowRight size={18}/></button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0">
+          <div className="text-center shrink-0 mb-6">
+            <h2 className="text-3xl font-black mb-2 text-blue-400 flex items-center justify-center gap-3"><Dna size={32} /> Build-a-Bug Sandbox</h2>
+            <p className="text-slate-300">Select evolutionary traits for your firefly and see if it can survive its environment!</p>
+          </div>
+          <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+            <div className="w-full lg:w-1/2 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5">
+                <h3 className="font-bold text-white mb-3 flex items-center gap-2"><Mountain size={18} className="text-orange-400"/> 1. Choose Habitat</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {['forest', 'swamp', 'desert'].map(h => (
+                    <button key={h} onClick={() => setHabitat(h)} className={`p-2 rounded-xl border-2 font-bold text-sm capitalize transition-all ${habitat === h ? 'bg-slate-800 border-orange-500 text-white shadow-[0_0_10px_rgba(249,115,22,0.4)]' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'}`}>{h}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5">
+                <h3 className="font-bold text-white mb-3 flex items-center gap-2"><Clock size={18} className="text-blue-400"/> 2. Flash Interval</h3>
+                <div className="flex flex-col gap-2">
+                  <button onClick={() => setInterval('delayed')} className={`p-3 rounded-xl border-2 font-bold text-sm text-left transition-all ${interval === 'delayed' ? 'bg-slate-800 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'}`}>Delayed (Pulses with long dark pauses)</button>
+                  <button onClick={() => setInterval('strobe')} className={`p-3 rounded-xl border-2 font-bold text-sm text-left transition-all ${interval === 'strobe' ? 'bg-slate-800 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'}`}>Strobe (Continuous rapid flashes)</button>
+                  <button onClick={() => setInterval('continuous')} className={`p-3 rounded-xl border-2 font-bold text-sm text-left transition-all ${interval === 'continuous' ? 'bg-slate-800 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-600'}`}>Continuous (A steady, eerie glow)</button>
+                </div>
+              </div>
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5">
+                <h3 className="font-bold text-white mb-3 flex items-center gap-2"><Palette size={18} className="text-pink-400"/> 3. Light Color</h3>
+                <div className="flex gap-3">
+                  <button onClick={() => setColor('yellow')} className={`flex-1 h-12 rounded-xl border-4 transition-all ${color === 'yellow' ? 'border-white bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)] scale-105' : 'border-slate-800 bg-yellow-400/50 hover:bg-yellow-400/80'}`}></button>
+                  <button onClick={() => setColor('green')} className={`flex-1 h-12 rounded-xl border-4 transition-all ${color === 'green' ? 'border-white bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.6)] scale-105' : 'border-slate-800 bg-green-500/50 hover:bg-green-500/80'}`}></button>
+                  <button onClick={() => setColor('blue')} className={`flex-1 h-12 rounded-xl border-4 transition-all ${color === 'blue' ? 'border-white bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.6)] scale-105' : 'border-slate-800 bg-cyan-400/50 hover:bg-cyan-400/80'}`}></button>
+                </div>
+              </div>
+            </div>
+            <div className="w-full lg:w-1/2 flex flex-col gap-4">
+              <div className={`flex-1 rounded-3xl border-4 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-500 ${getBgColor()} min-h-[250px]`}>
+                <div className="absolute inset-0 opacity-20 pointer-events-none flex items-end justify-center">
+                   {habitat === 'forest' && <Trees size={200} />}
+                   {habitat === 'swamp' && <Waves size={200} />}
+                   {habitat === 'desert' && <Mountain size={200} />}
+                </div>
+                <div className="relative z-10 p-8">
+                  <div className={`absolute inset-0 blur-2xl opacity-40 rounded-full ${getAnimClass()}`} style={{ backgroundColor: color === 'yellow' ? '#facc15' : color === 'green' ? '#4ade80' : '#22d3ee' }}></div>
+                  <Bug size={100} className={`relative z-20 ${getBugColor()} ${getAnimClass()}`} />
+                </div>
+                <div className="absolute top-4 left-4 bg-slate-900/80 px-3 py-1 rounded-lg border border-slate-700 text-xs font-bold text-slate-300 uppercase tracking-wider backdrop-blur-sm">Live Preview</div>
+              </div>
+              <button onClick={runSimulation} className="w-full py-4 font-black rounded-2xl transition-all flex items-center justify-center gap-2 bg-blue-500 text-white hover:bg-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.6)] text-xl hover:scale-[1.02] active:scale-95">
+                <Dna size={24} /> Run Simulation
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 7: FIELD RESEARCHER (CITIZEN SCIENCE) ---
+    function StageResearcher({ onComplete }) {
+      const [gameState, setGameState] = useState('intro'); // intro, playing, timeout_trigger, result
+      const [bugs, setBugs] = useState([]);
+      const [targetType, setTargetType] = useState('smoky');
+      const [taggedIds, setTaggedIds] = useState([]);
+      const [timeLeft, setTimeLeft] = useState(60);
+      const [results, setResults] = useState(null);
+
+      const bugConfigs = {
+        smoky: { name: 'Smoky Mountain Sync', desc: 'Flashes 5-10 times, then 6-10 seconds of darkness.', anim: 'animate-smoky', color: 'bg-orange-400' },
+        snappy: { name: 'Snappy Sync', desc: 'Continuous, rapid-fire strobe without long pauses.', anim: 'animate-snappy', color: 'bg-yellow-400' },
+        ghost: { name: 'Blue Ghost', desc: 'Continuous, eerie bluish-green glow. Does not blink.', anim: 'animate-ghost', color: 'bg-cyan-400' }
+      };
+
+      const startGame = () => {
+        const generatedBugs = [];
+        const counts = { 
+          smoky: Math.floor(Math.random() * 3) + 5,  // 5 to 7 
+          snappy: Math.floor(Math.random() * 4) + 6, // 6 to 9
+          ghost: Math.floor(Math.random() * 3) + 4   // 4 to 6
+        };
+        
+        Object.keys(counts).forEach(type => {
+          for(let i=0; i<counts[type]; i++) {
+            generatedBugs.push({
+              id: `${type}-${i}`,
+              type: type,
+              x: Math.random() * 90 + 5,
+              y: Math.random() * 70 + 10,
+              // Smoky bugs synchronize, so they get the same delay. Others are random.
+              delay: type === 'smoky' ? '0s' : `${Math.random() * 4}s`
+            });
+          }
+        });
+        
+        setBugs(generatedBugs.sort(() => Math.random() - 0.5));
+        const types = ['smoky', 'snappy', 'ghost'];
+        setTargetType(types[Math.floor(Math.random() * types.length)]);
+        setTaggedIds([]);
+        setTimeLeft(60);
+        setGameState('playing');
+      };
+
+      const handleTag = (id) => {
+        if (gameState !== 'playing') return;
+        setTaggedIds(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
+      };
+
+      const handleSubmit = () => {
+        const targetBugs = bugs.filter(b => b.type === targetType);
+        const correctTags = taggedIds.filter(id => id.startsWith(targetType)).length;
+        const incorrectTags = taggedIds.length - correctTags;
+        const missedTargets = targetBugs.length - correctTags;
+
+        setResults({
+          targetCount: targetBugs.length,
+          correctTags,
+          incorrectTags,
+          missedTargets,
+          success: correctTags === targetBugs.length && incorrectTags === 0
+        });
+        setGameState('result');
+      };
+
+      useEffect(() => {
+        if (gameState !== 'playing') return;
+        const timer = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              setGameState('timeout_trigger'); // Prevent stale closures by triggering a state change instead of direct call
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearInterval(timer);
+      }, [gameState]);
+
+      useEffect(() => {
+        if (gameState === 'timeout_trigger') {
+          handleSubmit();
+        }
+      }, [gameState]);
+
+      if (gameState === 'intro') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-500 h-full">
+            <div className="text-center shrink-0">
+              <Search size={80} className="text-blue-400 mx-auto mb-4 animate-bounce" />
+              <h2 className="text-3xl sm:text-4xl font-black mb-2 text-white">Field Researcher Mode</h2>
+              <p className="text-slate-300 max-w-xl mx-auto mb-4 leading-relaxed">
+                Citizen Scientists needed! We need to accurately estimate the population of specific fireflies in a dense canopy to track their health.
+              </p>
+              <div className="bg-slate-800 p-6 rounded-2xl text-left max-w-xl mx-auto border border-slate-700">
+                <h3 className="font-bold text-yellow-400 mb-3 uppercase tracking-wider text-sm">Your Assignment:</h3>
+                <ul className="space-y-3 text-sm text-slate-300">
+                  <li className="flex gap-3"><FileText className="text-blue-400 shrink-0" size={20}/> <strong>Observe:</strong> You will be assigned a target species.</li>
+                  <li className="flex gap-3"><Search className="text-orange-400 shrink-0" size={20}/> <strong>Identify:</strong> Watch the flash patterns carefully to find your target among other species.</li>
+                  <li className="flex gap-3"><CheckCircle className="text-green-400 shrink-0" size={20}/> <strong>Tag & Report:</strong> Click to tag every individual of the target species before the 60-second timer runs out. Don't tag the wrong ones!</li>
+                </ul>
+              </div>
+            </div>
+            <button onClick={startGame} className="px-8 py-4 font-bold rounded-full transition-all flex items-center gap-2 bg-blue-500 text-white hover:bg-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.6)] text-xl hover:scale-105">
+              Start Field Survey
+            </button>
+          </div>
+        );
+      }
+
+      if (gameState === 'result') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-700 h-full text-center">
+            <div className="relative mb-2">
+              <div className={`absolute inset-0 blur-3xl opacity-30 rounded-full animate-pulse ${results.success ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              {results.success ? (
+                <CheckCircle size={100} className="text-green-400 relative z-10 animate-bounce drop-shadow-[0_0_20px_rgba(74,222,128,1)]" />
+              ) : (
+                <AlertTriangle size={100} className="text-red-500 relative z-10 animate-shake" />
+              )}
+            </div>
+            
+            <h2 className={`text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r ${results.success ? 'from-green-400 to-yellow-400' : 'from-orange-400 to-red-400'}`}>
+              {results.success ? "Perfect Observation!" : "Data Error!"}
+            </h2>
+            
+            <div className="bg-slate-800/80 border border-slate-700 p-6 rounded-2xl max-w-xl shadow-xl w-full">
+              <p className="text-lg text-slate-200 mb-6">
+                {results.success 
+                  ? `Excellent work, researcher! You accurately tagged all ${results.targetCount} ${bugConfigs[targetType].name}s without any false positives. Your data helps protect their habitat.` 
+                  : `Your field data had some errors. Remember, you must watch their flash intervals carefully to identify them correctly!`}
+              </p>
+              
+              {!results.success && (
+                <div className="grid grid-cols-2 gap-4 text-left">
+                  <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <span className="text-xs font-bold text-slate-500 uppercase">Target Count</span>
+                    <p className="text-xl font-black text-white">{results.targetCount}</p>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <span className="text-xs font-bold text-slate-500 uppercase">Correctly Tagged</span>
+                    <p className="text-xl font-black text-green-400">{results.correctTags}</p>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <span className="text-xs font-bold text-slate-500 uppercase">Missed Targets</span>
+                    <p className="text-xl font-black text-orange-400">{results.missedTargets}</p>
+                  </div>
+                  <div className="bg-slate-900 p-4 rounded-lg border border-slate-700">
+                    <span className="text-xs font-bold text-slate-500 uppercase">Incorrect Species Tagged</span>
+                    <p className="text-xl font-black text-red-400">{results.incorrectTags}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-4 mt-4">
+              <button onClick={startGame} className="px-6 py-3 rounded-full font-bold bg-slate-800 text-white hover:bg-slate-700 flex items-center gap-2 transition-all"><RefreshCw size={18}/> Retry Survey</button>
+              {results.success && (
+                <button onClick={onComplete} className="px-6 py-3 rounded-full font-bold bg-yellow-400 text-slate-900 hover:bg-yellow-300 flex items-center gap-2 shadow-[0_0_15px_rgba(250,204,21,0.5)] hover:scale-105 transition-all">Continue <ArrowRight size={18}/></button>
+              )}
+              {!results.success && (
+                 <button onClick={onComplete} className="text-xs text-slate-500 hover:text-white transition-colors underline absolute bottom-4">Skip Survey</button>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // PLAYING STATE
+      return (
+        <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0 relative">
+          <div className="text-center shrink-0 mb-2">
+            <h2 className="text-2xl font-black text-blue-400">Canopy Observation</h2>
+            <p className="text-slate-300 text-sm">Find and tag all the {bugConfigs[targetType].name}s!</p>
+          </div>
+
+          <div className="relative flex-1 bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-800 my-2 shadow-inner min-h-[350px]">
+            {/* Background Decor */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none flex items-end justify-between overflow-hidden">
+               <Trees size={300} className="text-green-900 -ml-10" />
+               <Trees size={400} className="text-green-900 -mb-10" />
+               <Trees size={250} className="text-green-900 -mr-10" />
+            </div>
+
+            {/* Bugs */}
+            {bugs.map(bug => {
+              const isTagged = taggedIds.includes(bug.id);
+              const config = bugConfigs[bug.type];
+              return (
+                <button 
+                  key={bug.id}
+                  onClick={() => handleTag(bug.id)}
+                  className="absolute w-14 h-14 flex items-center justify-center -ml-7 -mt-7 rounded-full transition-all group z-20 outline-none"
+                  style={{ left: `${bug.x}%`, top: `${bug.y}%` }}
+                >
+                  {isTagged && <div className="absolute inset-0 border-[3px] border-white/70 rounded-full animate-in zoom-in duration-200 scale-75"></div>}
+                  <div className="absolute inset-0 border-2 border-white/20 rounded-full scale-0 group-hover:scale-75 transition-all duration-300"></div>
+                  <div 
+                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full ${config.color} ${config.anim}`}
+                    style={{ animationDelay: bug.delay }}
+                  ></div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Clipboard Overlay */}
+          <div className="absolute bottom-6 right-6 bg-slate-100 text-slate-900 p-4 sm:p-5 rounded-lg shadow-[0_10px_30px_rgba(0,0,0,0.8)] rotate-[-2deg] border-t-8 border-slate-300 w-56 sm:w-64 z-30 transform hover:rotate-0 transition-transform">
+            {/* Clipboard Clip */}
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-12 h-4 bg-slate-400 rounded-t-md border-2 border-slate-500 shadow-sm"></div>
+            
+            <div className="flex justify-between items-center mb-3 border-b-2 border-slate-300 pb-2">
+              <h3 className="font-black text-lg flex items-center gap-2"><FileText size={20}/> Field Notes</h3>
+              <span className={`font-black text-2xl ${timeLeft <= 10 ? 'text-red-600 animate-pulse' : 'text-slate-600'}`}>{timeLeft}s</span>
+            </div>
+            <div className="mb-4">
+              <p className="text-[10px] font-bold text-slate-500 uppercase">Target Species:</p>
+              <p className="font-black text-blue-600 leading-tight">{bugConfigs[targetType].name}</p>
+              <p className="text-[10px] font-medium text-slate-600 mt-1 leading-tight">{bugConfigs[targetType].desc}</p>
+            </div>
+            <div className="flex justify-between items-center bg-slate-200 p-2 sm:p-3 rounded-md mb-4 shadow-inner">
+              <span className="font-bold text-sm">Tagged:</span>
+              <span className="font-black text-2xl text-green-600">{taggedIds.length}</span>
+            </div>
+            <button onClick={handleSubmit} className="w-full bg-slate-900 text-white font-bold py-2 sm:py-3 rounded-md hover:bg-slate-800 transition-colors shadow-md text-sm">
+              Submit Data
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 8: LIGHT POLLUTION SIMULATOR ---
+    function StageLightPollution({ onComplete }) {
+      const [urban, setUrban] = useState(0);
+      const [cars, setCars] = useState(0);
+      const [flashlights, setFlashlights] = useState(0);
+
+      const totalPollution = (urban + cars + flashlights) / 3;
+
+      // Generate a batch of fireflies with varying "tolerances" to light pollution
+      const bugs = useMemo(() => Array.from({ length: 45 }).map((_, i) => ({
+        id: i,
+        x: Math.random() * 90 + 5,
+        y: Math.random() * 80 + 10,
+        delay: `${Math.random() * 4}s`,
+        tolerance: Math.random() * 80 + 20 // Bugs will disappear when pollution exceeds their tolerance
+      })), []);
+
+      const activeBugs = bugs.filter(b => b.tolerance > totalPollution);
+
+      return (
+        <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0">
+          <div className="text-center shrink-0 mb-4">
+            <h2 className="text-3xl font-black mb-2 text-orange-400 flex items-center justify-center gap-3">
+              <Flashlight size={32} /> Light Pollution Simulator
+            </h2>
+            <p className="text-slate-300">See how artificial light destroys the dark skies required for mating rituals.</p>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+            {/* Visual Simulator */}
+            <div className="w-full lg:w-3/5 relative bg-slate-950 rounded-3xl border-4 border-slate-800 overflow-hidden flex flex-col items-center justify-end min-h-[300px]">
+              
+              {/* Skyglow (Urban) */}
+              <div className="absolute inset-0 bg-orange-500 transition-opacity duration-300 pointer-events-none mix-blend-screen" style={{ opacity: urban / 200 }}></div>
+              <div className="absolute bottom-0 inset-x-0 h-1/2 bg-gradient-to-t from-orange-400 to-transparent transition-opacity duration-300" style={{ opacity: urban / 100 }}></div>
+
+              {/* Car Headlights */}
+              {cars > 10 && (
+                <div className="absolute bottom-1/4 -left-1/4 w-[150%] h-32 bg-gradient-to-r from-transparent via-white to-transparent opacity-40 blur-xl animate-pulse" style={{ transform: 'rotate(-5deg)', opacity: cars / 150 }}></div>
+              )}
+              {cars > 50 && (
+                <div className="absolute bottom-1/3 -right-1/4 w-[150%] h-32 bg-gradient-to-l from-transparent via-white to-transparent opacity-40 blur-xl animate-pulse delay-75" style={{ transform: 'rotate(5deg)', opacity: cars / 150 }}></div>
+              )}
+
+              {/* Flashlights */}
+              {flashlights > 10 && (
+                <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white rounded-full blur-[80px] transition-opacity duration-300" style={{ opacity: flashlights / 100 }}></div>
+              )}
+              {flashlights > 60 && (
+                <div className="absolute top-1/2 right-1/4 w-80 h-80 bg-white rounded-full blur-[100px] transition-opacity duration-300" style={{ opacity: flashlights / 100 }}></div>
+              )}
+
+              {/* Trees silhouette */}
+              <div className="absolute inset-x-0 bottom-0 flex justify-around opacity-80 z-10">
+                <Trees size={150} className="text-slate-900 -mb-10" />
+                <Trees size={250} className="text-slate-900 -mb-10" />
+                <Trees size={180} className="text-slate-900 -mb-10" />
+              </div>
+
+              {/* Fireflies */}
+              <div className="absolute inset-0 z-20">
+                {activeBugs.map(bug => (
+                  <div 
+                    key={bug.id}
+                    className="absolute w-2 h-2 rounded-full bg-yellow-400 animate-smoky shadow-[0_0_15px_rgba(250,204,21,0.8)]"
+                    style={{ left: `${bug.x}%`, top: `${bug.y}%`, animationDelay: bug.delay }}
+                  ></div>
+                ))}
+              </div>
+
+              {/* Status Message */}
+              <div className="absolute top-4 left-4 right-4 z-30 flex justify-center pointer-events-none">
+                <div className={`px-6 py-2 rounded-full font-bold text-sm shadow-lg backdrop-blur-md border transition-colors ${totalPollution < 30 ? 'bg-green-900/80 border-green-500 text-green-300' : totalPollution < 70 ? 'bg-yellow-900/80 border-yellow-500 text-yellow-300' : 'bg-red-900/80 border-red-500 text-red-300'}`}>
+                  {totalPollution < 30 ? "Healthy Dark Sky - Courtship Active" : totalPollution < 70 ? "Warning: Visual Noise Disrupting Signals" : "Critical: Mating Rituals Suppressed!"}
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="w-full lg:w-2/5 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-col gap-2">
+                <div className="flex justify-between items-center text-orange-400">
+                  <h3 className="font-bold flex items-center gap-2"><Building size={18}/> Urban Sprawl</h3>
+                  <span className="font-black">{urban}%</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-2">City skyglow bouncing off clouds washes out the night.</p>
+                <input type="range" min="0" max="100" value={urban} onChange={(e) => setUrban(parseInt(e.target.value))} className="w-full accent-orange-500 cursor-pointer" />
+              </div>
+
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-col gap-2">
+                <div className="flex justify-between items-center text-blue-400">
+                  <h3 className="font-bold flex items-center gap-2"><Car size={18}/> Car Headlights</h3>
+                  <span className="font-black">{cars}%</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-2">Traffic near habitats sweeps blinding light through the trees.</p>
+                <input type="range" min="0" max="100" value={cars} onChange={(e) => setCars(parseInt(e.target.value))} className="w-full accent-blue-500 cursor-pointer" />
+              </div>
+
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-col gap-2">
+                <div className="flex justify-between items-center text-slate-200">
+                  <h3 className="font-bold flex items-center gap-2"><Flashlight size={18}/> White LEDs</h3>
+                  <span className="font-black">{flashlights}%</span>
+                </div>
+                <p className="text-xs text-slate-400 mb-2">Tourists using phones and white LEDs instantly blind the bugs.</p>
+                <input type="range" min="0" max="100" value={flashlights} onChange={(e) => setFlashlights(parseInt(e.target.value))} className="w-full accent-slate-300 cursor-pointer" />
+              </div>
+
+              <button 
+                onClick={onComplete} 
+                className="mt-auto py-4 font-black rounded-2xl transition-all flex items-center justify-center gap-2 bg-yellow-400 text-slate-900 hover:bg-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.5)] text-lg hover:scale-[1.02] active:scale-95"
+              >
+                Continue to Ecosystem <ArrowRight size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 9: ECOSYSTEM ROLE ---
+    function StageEcosystem({ onComplete }) {
+      const [activeTab, setActiveTab] = useState('importance');
+      const tabs = [
+        { id: 'importance', title: "Ecological Role", icon: <Globe size={18} /> },
+        { id: 'action', title: "How to Help", icon: <HeartHandshake size={18} /> }
+      ];
+
+      return (
+        <div className="flex flex-col space-y-4 animate-in slide-in-from-right duration-500 h-full">
+          <div className="text-center shrink-0">
+            <h2 className="text-3xl font-black mb-2 text-green-400">Guardians of the Forest</h2>
+            <p className="text-slate-300">Understand their vital role in the food web and how you can protect them.</p>
+          </div>
+
+          <div className="flex justify-center gap-2 shrink-0">
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 sm:px-6 py-3 rounded-full font-bold transition-all flex items-center gap-2 ${activeTab === tab.id ? 'bg-green-500 text-slate-900 shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}`}>
+                {tab.icon} {tab.title}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl p-4 sm:p-6 flex-1 overflow-y-auto custom-scrollbar">
+            {activeTab === 'importance' && (
+              <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
+                <div className="bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-700/50">
+                  <h3 className="text-lg sm:text-xl font-bold text-yellow-400 flex items-center gap-2 mb-2"><Bug size={20} /> Voracious Pest Controllers</h3>
+                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed">While adults often eat very little, fireflies spend up to two years as larvae in the soil acting as apex micro-predators. They hunt snails and slugs, serving as critical natural pest control.</p>
+                </div>
+                <div className="bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-700/50">
+                  <h3 className="text-lg sm:text-xl font-bold text-blue-400 flex items-center gap-2 mb-2"><Leaf size={20} /> Environmental Indicators</h3>
+                  <p className="text-slate-300 text-sm sm:text-base leading-relaxed">Fireflies require pristine soil, clean water, and dark skies. Because of this, scientists use them as an Indicator Species to gauge the overall health of a local ecosystem.</p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'action' && (
+              <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
+                <div className="bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-700/50 flex items-start gap-4">
+                  <div className="p-3 rounded-full bg-red-900/30 border border-red-500/50 text-red-400"><LightbulbOff size={20} /></div>
+                  <div><h3 className="font-bold text-white">Defeat Light Pollution</h3><p className="text-slate-300 text-sm">Turn off exterior lights or use red/amber bulbs. White LEDs blind fireflies.</p></div>
+                </div>
+                <div className="bg-slate-800/50 p-4 sm:p-5 rounded-2xl border border-slate-700/50 flex items-start gap-4">
+                  <div className="p-3 rounded-full bg-orange-900/30 border border-orange-500/50 text-orange-400"><Leaf size={20} /></div>
+                  <div><h3 className="font-bold text-white">Leave the Leaves!</h3><p className="text-slate-300 text-sm">Larvae need moist leaf litter to survive for two years. Clean lawns are biological deserts.</p></div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-2 shrink-0">
+            <button onClick={onComplete} className="px-6 py-3 font-bold rounded-full transition-all flex items-center gap-2 bg-yellow-400 text-slate-900 hover:bg-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+              Play 100 Fun Facts Trivia <ArrowRight size={20} />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 9: THE 100 FACT TRIVIA ARCADE ---
+    const TRIVIA_DB = [
+      { q: "Are fireflies actually flies?", o: ["Yes", "No, they are beetles", "No, they are moths", "No, they are true bugs"], a: 1, e: "Fireflies belong to the order Coleoptera, making them beetles, not flies!" },
+      { q: "How many species of fireflies exist worldwide?", o: ["~500", "~1,000", "Over 2,000", "Exactly 50"], a: 2, e: "Scientists have documented over 2,000 different species globally." },
+      { q: "Where is the light-producing organ located on a firefly?", o: ["Head", "Thorax", "Wings", "Abdomen"], a: 3, e: "The light organ, or lantern, is located on the insect's abdomen." },
+      { q: "Do all firefly species produce light?", o: ["Yes", "No", "Only in the USA", "Only the females"], a: 1, e: "No! Some 'dark' firefly species, like the Winter Firefly, use pheromones instead of light to find mates." },
+      { q: "What do adult fireflies eat?", o: ["Mosquitoes", "Nectar or nothing at all", "Leaves", "Other beetles"], a: 1, e: "Many adults don't eat at all during their short lifespan, while others sip nectar. (Femme Fatales are the exception!)" },
+      { q: "How long do adult fireflies typically live?", o: ["1-2 weeks", "6 months", "1 year", "3 days"], a: 0, e: "The adult glowing phase is short, usually lasting only a few weeks to mate." },
+      { q: "How long is the larval (baby) stage of a firefly?", o: ["1 week", "1 month", "Up to 2 years", "10 years"], a: 2, e: "They spend most of their lives—up to 2 years—living in the soil as larvae." },
+      { q: "What do firefly larvae eat?", o: ["Grass", "Snails, slugs, and worms", "Pollen", "Roots"], a: 1, e: "Larvae are voracious carnivores that inject prey with paralyzing digestive enzymes." },
+      { q: "Are firefly eggs bioluminescent?", o: ["No", "Yes, some glow faintly", "Only in the water", "They flash red"], a: 1, e: "In many species, even the tiny eggs emit a faint glow in the soil!" },
+      { q: "What is a 'glowworm'?", o: ["A different insect entirely", "A flightless female firefly or larva", "A radioactive worm", "A centipede"], a: 1, e: "The term is often used for firefly larvae, or adult females that lack wings and glow from the ground." },
+      { q: "What is the light-emitting molecule inside a firefly called?", o: ["Chlorophyll", "Luciferin", "Melanin", "Keratin"], a: 1, e: "Luciferin is the biochemical substance that produces the light." },
+      { q: "What enzyme acts as the catalyst for the glow?", o: ["Lactase", "Amylase", "Luciferase", "Pepsin"], a: 2, e: "Luciferase triggers the reaction when mixed with oxygen and luciferin." },
+      { q: "What gas is required from the air to make the firefly glow?", o: ["Carbon Dioxide", "Nitrogen", "Oxygen", "Helium"], a: 2, e: "Oxygen is pulled into the abdomen to oxidize the luciferin." },
+      { q: "Firefly light is called 'Cold Light'. What is its energy efficiency?", o: ["10%", "50%", "90%", "Nearly 100%"], a: 3, e: "Almost 100% of the energy is emitted as light, with virtually zero heat. An incandescent bulb is only 10% efficient!" },
+      { q: "What powers the chemical reaction at a cellular level?", o: ["Sugar", "ATP", "Lipids", "Sunlight"], a: 1, e: "ATP (adenosine triphosphate) provides the cellular energy for the flash." },
+      { q: "What color light do fireflies NOT naturally produce?", o: ["Green", "Yellow", "Orange", "Blue/Violet"], a: 3, e: "Fireflies produce yellow, green, and pale orange light, but true deep blue or violet is not naturally occurring." },
+      { q: "Can scientists synthesize Luciferase?", o: ["No, it's impossible", "Yes, for medical research", "Only for toys", "Only in space"], a: 1, e: "Yes, it's heavily used in biomedicine to track cells, including cancer research." },
+      { q: "How does a firefly turn its light on and off?", o: ["Blinking its eyes", "Controlling oxygen flow to the abdomen", "Eating sugar", "Rubbing its wings"], a: 1, e: "They control the flash by regulating how much oxygen enters their light organ." },
+      { q: "Why is cold light important for the firefly?", o: ["To stay hidden", "To freeze predators", "To avoid fatally overheating", "To cool the forest"], a: 2, e: "If the light produced heat like a lightbulb, the insect would cook itself instantly." },
+      { q: "What does the word 'Luciferin' mean in Latin?", o: ["Light-bringer", "Night bug", "Green flame", "Forest star"], a: 0, e: "It comes from the Latin 'lucifer', meaning light-bringing." },
+      { q: "Which US National Park is most famous for synchronous fireflies?", o: ["Yellowstone", "Yosemite", "Great Smoky Mountains", "Grand Canyon"], a: 2, e: "The Smoky Mountains host a massive lottery event for P. carolinus viewing." },
+      { q: "What state is home to Congaree National Park, known for 'Snappy Syncs'?", o: ["Florida", "South Carolina", "Texas", "Maine"], a: 1, e: "Congaree's bottomland swamps in SC are perfect for P. frontalis." },
+      { q: "Where can you find the aquatic Genji firefly?", o: ["Canada", "Brazil", "Japan", "Egypt"], a: 2, e: "Genji-botaru is a culturally significant aquatic species in Japan." },
+      { q: "Mangrove synchronous fireflies are famous in which country?", o: ["Malaysia", "Norway", "Chile", "Iceland"], a: 0, e: "The Selangor river in Malaysia is famous for massive mangrove displays." },
+      { q: "Can fireflies be found in the arid US Southwest (Arizona)?", o: ["No, it's too dry", "Yes, P. knulli emerges after monsoons", "Only in winter", "Only in caves"], a: 1, e: "Yes! P. knulli is a rare desert species tied to monsoon moisture." },
+      { q: "Are there fireflies in Europe?", o: ["No", "Yes, like Luciola italica in Italy", "Only in zoos", "They went extinct"], a: 1, e: "Yes, Europe has several species, notably studied in the Apennine mountains." },
+      { q: "What continent has NO native firefly species?", o: ["South America", "Africa", "Antarctica", "Australia"], a: 2, e: "Antarctica is too cold to support Lampyridae populations." },
+      { q: "Where do the massive Lamprigera 'Giant Glowworms' live?", o: ["Canada", "Southeast Asia", "UK", "New Zealand"], a: 1, e: "They are found in Southeast Asian rainforests." },
+      { q: "What unique viewing geometry does High Bridge Trail in VA offer?", o: ["Looking up from a cave", "Looking down into the canopy from a bridge", "Underwater viewing", "Space station viewing"], a: 1, e: "You stand on a high bridge looking down at the flashing canopy." },
+      { q: "Nanacamilpa is a famous firefly sanctuary in which country?", o: ["Spain", "Mexico", "Peru", "Cuba"], a: 1, e: "It's a massive, protected forest sanctuary in Tlaxcala, Mexico." },
+      { q: "Why do most male fireflies flash?", o: ["To scare birds", "To attract a mate", "To see where they fly", "To communicate with ants"], a: 1, e: "The flashing is a complex courtship display to find females of their species." },
+      { q: "How do females respond to males?", o: ["With a loud chirp", "By flying towards them", "With a specific return flash from the ground", "By hiding"], a: 2, e: "Females usually sit in the grass and flash a precise response to the male's signal." },
+      { q: "What is a 'Femme Fatale' firefly (Photuris)?", o: ["A beautiful glowing moth", "A female that mimics other species' flashes to eat their males", "A non-glowing firefly", "A poisonous larva"], a: 1, e: "She mimics the female responses of other species, lures the males in, and eats them!" },
+      { q: "Why do synchronous fireflies blink together?", o: ["To stay warm", "To cut through ambient visual 'signal noise' in dense forests", "To blind predators", "To mark territory"], a: 1, e: "Synchrony helps males make their signals clear in cluttered, visually noisy environments." },
+      { q: "What is unique about the Blue Ghost firefly?", o: ["It's invisible", "It emits a continuous glow without blinking", "It flies during the day", "It lives in the ocean"], a: 1, e: "Blue ghosts don't blink; males emit a continuous, eerie bluish-green light for up to 15 seconds." },
+      { q: "Do fireflies flash during the day?", o: ["Yes, but we can't see it well", "No, they sleep", "Only in winter", "Only when raining"], a: 0, e: "Some diurnal species use pheromones, but twilight species might flash early when it's still too bright to notice." },
+      { q: "Why do larvae glow?", o: ["To attract mates", "To see underground", "To warn predators they taste bad (aposematism)", "To stay warm"], a: 2, e: "Larvae glow as a warning signal to predators that they contain toxic defensive chemicals." },
+      { q: "What are the defensive chemicals in fireflies called?", o: ["Venom", "Lucibufagins", "Acid", "Cyanide"], a: 1, e: "Lucibufagins are toxic steroids that make fireflies taste terrible to predators." },
+      { q: "What happens if a lizard eats a firefly?", o: ["It glows forever", "It gains energy", "It throws up, or could even die from the toxins", "Nothing"], a: 2, e: "The lucibufagins are highly toxic to many reptiles and amphibians." },
+      { q: "Do all firefly species have the exact same flash pattern?", o: ["Yes", "No, each species has a unique Morse-code-like pattern", "Only the green ones", "They change it daily"], a: 1, e: "Each species has a highly specific flash interval so they don't mate with the wrong bug." },
+      { q: "What shape do Photinus pyralis males draw in the air when flashing?", o: ["A circle", "A 'J' shape", "A zig-zag", "A straight line"], a: 1, e: "The common Eastern US firefly dips down and flies up, making a glowing 'J'." },
+      { q: "What color is the flash of a Snappy Sync (P. frontalis)?", o: ["Deep blue", "Bright green", "Yellowish", "Red"], a: 2, e: "They generally emit a bright yellowish flash." },
+      { q: "At what time do Congaree's Snappy Syncs typically start displaying?", o: ["Midnight", "Right at sunset", "Exactly 8:30 PM", "Late twilight"], a: 3, e: "They require the deep darkness of late twilight to begin." },
+      { q: "What do 'Winter Fireflies' (Ellychnia corrusca) look for on trees?", o: ["Sap", "Mates (using pheromones, not light)", "Other fireflies to eat", "Leaves to eat"], a: 1, e: "They gather on tree trunks in early spring, finding mates via scent." },
+      { q: "What is a 'Lek' in biology, seen in desert fireflies?", o: ["A type of leaf", "A congregation of males competing for females", "A water source", "A spider web"], a: 1, e: "Desert P. knulli males gather in 'leks' near canyon washes to display." },
+      { q: "Why is the Chinese Lantern Firefly notable?", o: ["It's red", "Corrugated scales make it shine 50% brighter", "It's the size of a bird", "It lives in the desert"], a: 1, e: "Unique abdominal scales amplify its light output significantly." },
+      { q: "What does 'sympatric' mean for Blue Ghosts and Smoky Mountain Syncs?", o: ["They fight", "They share the same geographic area", "They interbreed", "They are identical"], a: 1, e: "Sympatric means they exist in the exact same forest at the same time." },
+      { q: "What is the primary threat to fireflies globally?", o: ["Frogs", "Bats", "Habitat loss and Light Pollution", "Winter"], a: 2, e: "Human development and artificial lights are decimating populations." },
+      { q: "Why are manicured lawns bad for fireflies?", o: ["Too bright", "No leaf litter for larvae to live in", "Grass is toxic", "Too noisy"], a: 1, e: "Clean lawns remove the vital leaf litter where larvae hunt and grow." },
+      { q: "What spectrum of light is safest to use around fireflies?", o: ["White", "Blue", "Red", "Green"], a: 2, e: "Fireflies cannot see red light well, so it doesn't disrupt their displays." },
+      { q: "Can mosquito spray hurt fireflies?", o: ["No", "Only if sprayed directly on them", "Yes, broad-spectrum sprays kill them indiscriminately", "It makes them glow brighter"], a: 2, e: "Bug spray is highly toxic to all Lampyridae." },
+      { q: "How do scientists track firefly populations?", o: ["Radar", "Citizen science networks like Firefly Atlas", "Satellites", "Sonar"], a: 1, e: "Projects like Xerces Society's Firefly Atlas rely on public reports." },
+      { q: "In Japan, fireflies are associated with what season?", o: ["Spring", "Early Summer", "Autumn", "Winter"], a: 1, e: "They are a cultural hallmark of early summer." },
+      { q: "What Japanese folklore surrounds the Genji and Heike fireflies?", o: ["They are stars fallen to earth", "They are the souls of fallen samurai warriors", "They bring rain", "They are fairy lanterns"], a: 1, e: "Legend says they represent the souls of two warring ancient samurai clans." },
+      { q: "What is 'Photopollution'?", o: ["Dirty water", "Smog", "Artificial light at night disrupting ecosystems", "Chemical waste"], a: 2, e: "Excessive artificial light ruins the dark skies fireflies need." },
+      { q: "How long is the dark pause of the Smoky Mountain Sync?", o: ["1 second", "2 seconds", "6 to 10 seconds", "1 minute"], a: 2, e: "The forest plunges into dramatic, absolute darkness for up to 10 seconds." },
+      { q: "How many times a minute does a Snappy Sync flash?", o: ["10", "30", "Up to 70", "200"], a: 2, e: "They operate on a continuous, rapid-fire strobe of ~70 flashes per minute." },
+      { q: "What triggers the emergence of the Southwest Sync in Arizona?", o: ["Snowmelt", "Monsoon rains", "Extreme heat", "Lunar eclipse"], a: 1, e: "They wait dormant until the late-summer monsoon moisture arrives." },
+      { q: "What is the scientific name for the Blue Ghost?", o: ["Photinus pyralis", "Phausis reticulata", "Luciola italica", "Lampyris noctiluca"], a: 1, e: "Phausis reticulata is the famous glowing ghost of the Appalachians." },
+      { q: "Do female Blue Ghosts fly?", o: ["Yes, very high", "No, they are flightless and stay on the ground", "Only when raining", "Only during the day"], a: 1, e: "Females are 'neotenic' (larviform) and do not have wings." },
+      { q: "Are fireflies found in Alaska?", o: ["Yes, millions", "No, it is too cold and the summer nights are too bright", "Only underground", "Only in greenhouses"], a: 1, e: "Alaska lacks native fireflies due to climate and the midnight sun." },
+      { q: "What animal is a known predator of fireflies despite the toxins?", o: ["Toads", "Some specialized spiders and assassin bugs", "Eagles", "Bears"], a: 1, e: "Certain spiders and predatory insects can tolerate or avoid their toxins." },
+      { q: "What happens when a firefly lands on a spider web?", o: ["It eats the spider", "It turns off its light to hide, but often gets eaten", "It burns the web", "It flashes SOS"], a: 1, e: "They frequently fall prey to orb-weaver spiders in the dark." },
+      { q: "What is a 'glow-worm' in New Zealand?", o: ["A firefly", "Actually a bioluminescent fungus gnat larva (Arachnocampa)", "A glowing snake", "A plant"], a: 1, e: "Unlike US glowworms (which are beetles), NZ glowworms are fly larvae in caves." },
+      { q: "Does the size of a firefly affect its flash?", o: ["No", "Yes, larger species generally have brighter or longer flashes", "Smaller ones are always brighter", "Size determines color"], a: 1, e: "Lantern size directly correlates with light output." },
+      { q: "Can heavy rain stop a firefly display?", o: ["No, they love water", "Yes, heavy rain grounds them", "They glow brighter in rain", "Rain makes them change color"], a: 1, e: "While they like humidity, active heavy rain stops flying and flashing." },
+      { q: "What temperature is ideal for most Eastern US fireflies?", o: ["Below freezing", "40-50°F", "Warm, humid evenings (60-80°F)", "Over 100°F"], a: 2, e: "They are highly temperature dependent and thrive in warm, muggy air." },
+      { q: "Do all fireflies flash at night?", o: ["Yes", "Some display at deep twilight, some at true night", "They only flash at midnight", "They flash at noon"], a: 1, e: "Different species have precise timing; some are 'twilight active', others 'night active'." },
+      { q: "How many wings does a firefly have?", o: ["Two", "Four (two hard covers, two flying wings)", "Six", "None"], a: 1, e: "Like all beetles, they have a hard outer shell (elytra) protecting two fragile flying wings." },
+      { q: "What is the hard outer wing cover called?", o: ["Carapace", "Elytra", "Exoskeleton", "Mantle"], a: 1, e: "The elytra pop open so the transparent wings underneath can deploy." },
+      { q: "Is the firefly glow continuous or pulsed in most species?", o: ["Continuous", "Pulsed (flashing)", "Always on", "Only on when eating"], a: 1, e: "Most use precise pulsed flashes for communication." },
+      { q: "Can a firefly's flash be seen on radar?", o: ["Yes", "No, it's light, not radio waves", "Only military radar", "Only weather radar"], a: 1, e: "Radar tracks radio waves, not visible light photons." },
+      { q: "What is 'Aposematism'?", o: ["A disease", "Glowing to warn predators you are toxic", "A type of plant", "Flying backwards"], a: 1, e: "It's the biological term for warning coloration or signals." },
+      { q: "Did Native Americans use fireflies?", o: ["Yes, sometimes in gourds as lanterns or decoration", "No, they feared them", "They used them as currency", "They ate them"], a: 0, e: "Historical accounts suggest some tribes used them for temporary light or adornment." },
+      { q: "In the 1800s, what did people think caused the glow?", o: ["Electricity", "Phosphorus (hence 'phosphorescence')", "Magic", "Friction"], a: 1, e: "Early scientists mistakenly believed it was phosphorus, before discovering luciferin." },
+      { q: "How long is the US firefly viewing season?", o: ["All year", "Only in winter", "Typically a few weeks from May to July", "One single night"], a: 2, e: "The adult mating season is a brief window in early to mid-summer." },
+      { q: "What is a 'Luminescence'?", o: ["Emission of light not caused by high heat", "Burning wood", "Reflecting the sun", "A type of bug"], a: 0, e: "It's cold light emission, opposite of incandescence (light from heat)." },
+      { q: "How do fireflies breathe?", o: ["Through a nose", "Through gills", "Through tubes called tracheae on their sides", "Through their mouth"], a: 2, e: "Insects breathe through tiny holes called spiracles connected to tracheal tubes." },
+      { q: "Does the oxygen for the glow enter through their lungs?", o: ["Yes", "They don't have lungs; it enters via tracheoles directly to the lantern", "Through the blood", "Through the skin"], a: 1, e: "Insects lack lungs; oxygen is piped directly to the light-producing cells." },
+      { q: "Can fireflies control their own flash?", o: ["No, it's automatic", "Yes, it is controlled by their nervous system", "The wind controls it", "Only females can"], a: 1, e: "Their brain controls the exact timing of the oxygen release into the lantern." },
+      { q: "What does 'Entomotourism' mean?", o: ["Traveling to see plants", "Traveling specifically to view insect phenomena", "Traveling to eat bugs", "Traveling by train"], a: 1, e: "It's a booming industry of ecotourism focused on insects like fireflies and butterflies." },
+      { q: "Why is Congaree National Park's lottery necessary?", o: ["To make money", "To protect the habitat from being crushed by thousands of tourists", "To keep bugs in", "To feed the bugs"], a: 1, e: "Massive crowds physically destroyed the leaf litter before the lottery was instituted." },
+      { q: "What is the 'Pennsylvania Firefly Festival'?", o: ["A music concert only", "An annual event celebrating and protecting P. carolinus in the Allegheny Forest", "A cooking show", "A winter sport"], a: 1, e: "It's a major entomotourism and conservation event in PA." },
+      { q: "Do synchronous fireflies exist in Mexico?", o: ["No", "Yes, massive displays happen in Tlaxcala", "Only in zoos", "Only on the beach"], a: 1, e: "The Nanacamilpa forests in Tlaxcala host incredible synchronous displays." },
+      { q: "Are fireflies territorial?", o: ["Yes, they fight fiercely", "No, males generally ignore each other while searching for females", "Only the females are", "Only in water"], a: 1, e: "They don't fight over territory; the competition is purely visual signaling." },
+      { q: "What happens if you catch a firefly in a jar with no air holes?", o: ["It glows brighter", "It will suffocate and die", "It turns blue", "It falls asleep"], a: 1, e: "They need oxygen to breathe and to glow!" },
+      { q: "Why shouldn't you poke holes in a metal jar lid from the inside out?", o: ["It looks bad", "The sharp edges inside can cut the firefly's wings", "It lets too much air in", "It stops the glow"], a: 1, e: "Always punch holes from the outside in to keep the inside smooth for the bugs." },
+      { q: "How long should you keep a caught firefly?", o: ["Forever", "A week", "Only a few hours, then release it at night so it can mate", "Until winter"], a: 2, e: "Their adult life is very short; keeping them prevents them from reproducing." },
+      { q: "What family do fireflies belong to?", o: ["Formicidae", "Lampyridae", "Lepidoptera", "Apidae"], a: 1, e: "Lampyridae is the scientific family of fireflies." },
+      { q: "Are there any aquatic fireflies in the US?", o: ["Yes, millions", "No, US larvae are strictly terrestrial/semi-aquatic in soil", "Only in oceans", "Only in Texas"], a: 1, e: "Unlike Japan's Genji, US fireflies don't have fully underwater larvae." },
+      { q: "Do fireflies migrate south for the winter?", o: ["Yes, like birds", "No, they hibernate in the soil as larvae", "They fly to space", "They ride on deer"], a: 1, e: "Larvae burrow deeper into the soil to survive the freezing winter." },
+      { q: "What is a 'Lek'?", o: ["A puddle", "A gathering of males displaying to females", "A type of tree", "A predator"], a: 1, e: "It's a biological term for a competitive mating display ground." },
+      { q: "Can urban sky-glow affect fireflies miles away?", o: ["No", "Yes, ambient light bounces off clouds and ruins dark forests", "Only if it's red light", "Only in winter"], a: 1, e: "Sky-glow from cities raises ambient light levels, suppressing flashing behavior." },
+      { q: "What happens to the Femme Fatale after she eats a male?", o: ["She dies", "She absorbs his toxic Lucibufagins to protect her own eggs", "She turns blue", "She stops glowing"], a: 1, e: "She steals his chemical defenses to make herself and her eggs poisonous to predators!" },
+      { q: "Are firefly numbers increasing or decreasing globally?", o: ["Increasing rapidly", "Decreasing significantly", "Staying exactly the same", "They are extinct"], a: 1, e: "Due to habitat loss and light pollution, they are declining worldwide." },
+      { q: "What is the best thing to plant for fireflies?", o: ["Short grass", "Native trees, shrubs, and leaving leaf litter", "Plastic flowers", "Cactus"], a: 1, e: "Native plants and un-raked leaves provide the perfect humid habitat." },
+      { q: "What is 'citizen science'?", o: ["Science done by politicians", "Everyday people collecting data (like counting fireflies) to help researchers", "Science in cities only", "Fake science"], a: 1, e: "Programs rely on regular citizens to map where fireflies still live." },
+      { q: "Do all synchronous fireflies have dark pauses?", o: ["Yes", "No, the Snappy Sync flashes continuously without long pauses", "Only in Japan", "Only in caves"], a: 1, e: "While P. carolinus has a dark pause, P. frontalis just keeps flashing rapidly." },
+      { q: "What does the enzyme Luciferase do?", o: ["Creates oxygen", "Acts as a catalyst to speed up the light reaction", "Digests food", "Pumps blood"], a: 1, e: "Enzymes are biological catalysts that make chemical reactions happen faster." },
+      { q: "Can fireflies hear?", o: ["Yes, they have big ears", "No, they lack tympanal organs (ears)", "They hear with their antennae", "They hear via radio"], a: 1, e: "They are deaf! Their communication is entirely visual and chemical." }
+    ];
+
+    function StageTrivia({ onComplete }) {
+      const [gameState, setGameState] = useState('start'); // start, playing, gameover
+      const [questionIndex, setQuestionIndex] = useState(0);
+      const [score, setScore] = useState(0);
+      const [feedback, setFeedback] = useState(null);
+      const [streak, setStreak] = useState(0);
+
+      // Randomize the 100 questions for each playthrough
+      const shuffledQuestions = useMemo(() => {
+        let shuffled = [...TRIVIA_DB].sort(() => 0.5 - Math.random());
+        return shuffled;
+      }, [gameState === 'start']);
+
+      const currentQ = shuffledQuestions[questionIndex];
+
+      const handleStart = () => {
+        setScore(0);
+        setQuestionIndex(0);
+        setStreak(0);
+        setGameState('playing');
+      };
+
+      const handleAnswer = (selectedIndex) => {
+        if (feedback) return; // Prevent double clicks
+        
+        const isCorrect = selectedIndex === currentQ.a;
+        if (isCorrect) {
+          setScore(s => s + 1);
+          setStreak(s => s + 1);
+        } else {
+          setStreak(0);
+        }
+
+        setFeedback({
+          correct: isCorrect,
+          text: currentQ.e,
+          selected: selectedIndex,
+          actual: currentQ.a
+        });
+
+        setTimeout(() => {
+          setFeedback(null);
+          if (questionIndex < 99) { // Go through all 100 or until user quits
+            setQuestionIndex(qi => qi + 1);
+          } else {
+            setGameState('gameover');
+          }
+        }, 4000);
+      };
+
+      if (gameState === 'start') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-500 h-full">
+            <div className="text-center shrink-0">
+              <HelpCircle size={80} className="text-yellow-400 mx-auto mb-4 animate-bounce" />
+              <h2 className="text-4xl font-black mb-2 text-white">100 Fun Facts Arcade</h2>
+              <p className="text-slate-300 max-w-lg mx-auto">Dive into our massive database of 100 firefly facts. Answer questions to build your streak and learn incredible trivia about biology, global species, and history!</p>
+            </div>
+            <button onClick={handleStart} className="px-8 py-4 font-bold rounded-full transition-all flex items-center gap-2 bg-yellow-400 text-slate-900 hover:bg-yellow-300 shadow-[0_0_20px_rgba(250,204,21,0.6)] text-xl hover:scale-105 active:scale-95">
+              Start Trivia Arcade <ArrowRight size={24} />
+            </button>
+            <button onClick={onComplete} className="mt-4 text-slate-400 hover:text-white underline text-sm">Skip Trivia and proceed to Final Exam</button>
+          </div>
+        );
+      }
+
+      if (gameState === 'gameover') {
+        return (
+          <div className="flex flex-col items-center justify-center space-y-6 animate-in zoom-in duration-500 h-full text-center">
+            <Award size={80} className="text-yellow-400 mx-auto mb-4" />
+            <h2 className="text-4xl font-black text-white">Trivia Master!</h2>
+            <p className="text-xl text-slate-300">You answered {score} out of 100 questions correctly!</p>
+            <div className="flex gap-4 mt-6">
+              <button onClick={handleStart} className="px-6 py-3 rounded-full font-bold bg-slate-800 text-white hover:bg-slate-700 flex items-center gap-2"><RefreshCw size={18}/> Play Again</button>
+              <button onClick={onComplete} className="px-6 py-3 rounded-full font-bold bg-yellow-400 text-slate-900 hover:bg-yellow-300 flex items-center gap-2">Final Exam <ArrowRight size={18}/></button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col items-center justify-center space-y-6 animate-in slide-in-from-right duration-500 h-full">
+          <div className="w-full max-w-3xl flex justify-between items-end mb-2 shrink-0">
+            <div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Question {questionIndex + 1}/100</span>
+              <div className="text-lg font-black text-white">Score: <span className="text-yellow-400">{score}</span></div>
+            </div>
+            <div className="flex items-center gap-2 bg-slate-900 px-4 py-1.5 rounded-full border border-slate-800">
+              <Flame className={streak >= 3 ? "text-orange-500 animate-pulse" : "text-slate-600"} size={18} />
+              <span className="font-bold text-sm text-slate-300">Streak: {streak}</span>
+            </div>
+          </div>
+
+          <div className="w-full max-w-3xl h-1 bg-slate-800 rounded-full shrink-0 overflow-hidden">
+            <div className="h-full bg-yellow-400 transition-all duration-300" style={{width: `${(questionIndex / 100) * 100}%`}}></div>
+          </div>
+
+          <div className="w-full max-w-3xl text-center shrink-0">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black mb-4 text-white leading-relaxed">{currentQ.q}</h2>
+          </div>
+
+          {feedback ? (
+            <div className={`p-6 sm:p-8 rounded-3xl w-full max-w-3xl border-4 text-center animate-in zoom-in duration-300 shrink-0 ${feedback.correct ? 'bg-green-900/50 border-green-500' : 'bg-red-900/50 border-red-500'}`}>
+              <div className="flex justify-center mb-4">
+                {feedback.correct ? <CheckCircle size={56} className="text-green-400 animate-bounce" /> : <AlertTriangle size={56} className="text-red-400 animate-shake" />}
+              </div>
+              <h3 className={`text-xl sm:text-2xl font-bold mb-3 ${feedback.correct ? 'text-green-400' : 'text-red-400'}`}>
+                {feedback.correct ? 'Correct!' : 'Incorrect!'}
+              </h3>
+              <p className="text-base sm:text-lg text-slate-200 leading-relaxed bg-slate-950/30 p-4 rounded-xl inline-block">{feedback.text}</p>
+            </div>
+          ) : (
+            <div className="w-full max-w-3xl flex flex-col gap-3 sm:gap-4 flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-[250px]">
+              {currentQ.o.map((opt, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleAnswer(idx)}
+                  className="p-4 sm:p-5 text-left rounded-2xl bg-slate-800 border-2 border-slate-700 hover:border-yellow-400 hover:bg-slate-700 transition-all font-medium text-base sm:text-lg text-slate-200 shadow-sm hover:shadow-[0_0_15px_rgba(250,204,21,0.2)] hover:-translate-y-1 shrink-0"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-between w-full max-w-3xl shrink-0 pt-2">
+             <button onClick={onComplete} className="text-xs text-slate-500 hover:text-white transition-colors underline">End Trivia Early</button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- STAGE 10: CONSERVATION QUIZ (Advanced for Teens/YA) ---
+    function StageConservation({ badges, addBadge }) {
+      const [currentQ, setCurrentQ] = useState(0);
+      const [score, setScore] = useState(0);
+      const [finished, setFinished] = useState(false);
+      const [feedback, setFeedback] = useState(null);
+
+      const questions = [
+        { title: "Why is the bioluminescent reaction of fireflies referred to scientifically as 'cold light'?", options: [{ text: "It only happens in cold climates.", correct: false, explain: "Incorrect. Many species thrive in humid swamps!" }, { text: "It produces virtually zero thermal energy.", correct: true, explain: "Correct! The rapid oxidation of luciferin is nearly 100% efficient, generating light without burning up the insect." }] },
+        { title: "What evolutionary problem does synchronous flashing solve in dense forests?", options: [{ text: "It cuts through ambient 'signal noise' allowing females to identify mates.", correct: true, explain: "Correct! By flashing in unison, males make their specific 'code' visible over the visual clutter." }, { text: "It blinds predators like bats temporarily.", correct: false, explain: "Incorrect. Synchrony is primarily for courtship communication." }] },
+        { title: "How does the 'Femme Fatale' (Photuris versicolor) firefly utilize bioluminescence?", options: [{ text: "She mimics flash patterns of other species to lure in males and consume them.", correct: true, explain: "Correct! This is a fascinating example of predatory deception." }, { text: "She emits a continuous blue glow to scare away predators.", correct: false, explain: "Incorrect. That continuous glow belongs to the Blue Ghost." }] },
+        { title: "Fireflies spend up to two years as larvae. What is their primary ecological role?", options: [{ text: "They are ravenous terrestrial carnivores that hunt snails and slugs.", correct: true, explain: "Correct! They actively hunt soft-bodied invertebrates in the moist soil." }, { text: "They act as pollinators for forest flowers.", correct: false, explain: "Incorrect! They don't pollinate; they are predators." }] },
+        { title: "Why do conservationists heavily promote the 'Leave the Leaves' campaign?", options: [{ text: "Because manicured lawns destroy the moist habitat needed for gestating larvae.", correct: true, explain: "Correct! Un-raked leaf litter is absolutely vital for the survival of the next generation." }, { text: "Because decaying leaves produce the luciferin chemical the adults need.", correct: false, explain: "Incorrect. Luciferin is produced internally." }] }
+      ];
+
+      const handleAnswer = (isCorrect, explanation) => {
+        if (feedback) return;
+        setFeedback({ correct: isCorrect, text: explanation });
+        if (isCorrect) setScore(score + 1);
+        
+        setTimeout(() => {
+          setFeedback(null);
+          if (currentQ < questions.length - 1) {
+            setCurrentQ(currentQ + 1);
+          } else {
+            setFinished(true);
+            if (score + (isCorrect ? 1 : 0) >= 4) addBadge('Master Ranger');
+          }
+        }, 4000);
+      };
+
+      if (finished) {
+        const passed = score >= 4;
+        return (
+          <div className="flex-1 flex flex-col items-center justify-center text-center animate-in zoom-in duration-700">
+            <div className="relative mb-6">
+              <div className={`absolute inset-0 blur-3xl opacity-30 rounded-full animate-pulse ${passed ? 'bg-green-500' : 'bg-orange-500'}`}></div>
+              {passed ? <Award size={100} className="text-yellow-400 relative z-10 animate-bounce drop-shadow-[0_0_20px_rgba(250,204,21,1)]" /> : <LightbulbOff size={100} className="text-slate-500 relative z-10" />}
+            </div>
+            <h2 className={`text-4xl sm:text-5xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r ${passed ? 'from-green-400 to-yellow-400' : 'from-orange-400 to-red-400'}`}>
+              {passed ? 'Senior Conservation Expert!' : 'Keep Studying, Ranger!'}
+            </h2>
+            <p className="text-lg text-slate-300 max-w-lg mb-6">
+              Evaluation complete! You scored <strong>{score} out of {questions.length}</strong>. 
+              {passed ? " You possess the advanced scientific knowledge required to protect these complex habitats." : " You need a score of 4 or higher to earn your Master Ranger badge."}
+            </p>
+            <button onClick={() => passed ? window.location.reload() : (() => { setCurrentQ(0); setScore(0); setFinished(false); })()} className="mt-6 px-8 py-3 rounded-full font-bold text-slate-900 bg-yellow-400 hover:bg-yellow-300 transition-colors shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+              {passed ? 'Restart Expedition' : 'Retake Exam'}
+            </button>
+          </div>
+        );
+      }
+
+      const q = questions[currentQ];
+
+      return (
+        <div className="flex flex-col items-center justify-center space-y-6 animate-in slide-in-from-right duration-500 h-full">
+          <div className="text-center w-full max-w-3xl shrink-0">
+            <div className="flex justify-center mb-4 text-yellow-500 gap-2">
+              {[...Array(questions.length)].map((_, i) => (
+                 <div key={i} className={`h-2 flex-1 rounded-full ${i <= currentQ ? 'bg-yellow-400' : 'bg-slate-800'}`}></div>
+              ))}
+            </div>
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <span className="bg-slate-800 text-slate-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700">Exam Question {currentQ + 1} of {questions.length}</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black mb-6 text-white leading-relaxed">{q.title}</h2>
+          </div>
+
+          {feedback ? (
+            <div className={`p-6 sm:p-8 rounded-3xl w-full max-w-3xl border-4 text-center animate-in zoom-in duration-300 shrink-0 ${feedback.correct ? 'bg-green-900/50 border-green-500' : 'bg-red-900/50 border-red-500'}`}>
+              <div className="flex justify-center mb-4">
+                {feedback.correct ? <CheckCircle size={56} className="text-green-400 animate-bounce" /> : <AlertTriangle size={56} className="text-red-400 animate-shake" />}
+              </div>
+              <h3 className={`text-xl sm:text-2xl font-bold mb-3 ${feedback.correct ? 'text-green-400' : 'text-red-400'}`}>{feedback.correct ? 'Scientifically Accurate!' : 'Incorrect Hypothesis.'}</h3>
+              <p className="text-base sm:text-lg text-slate-200 leading-relaxed bg-slate-950/30 p-4 rounded-xl inline-block">{feedback.text}</p>
+            </div>
+          ) : (
+            <div className="w-full max-w-3xl flex flex-col gap-4 flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+              {q.options.map((opt, idx) => (
+                <button key={idx} onClick={() => handleAnswer(opt.correct, opt.explain)} className="p-5 sm:p-6 text-left rounded-2xl bg-slate-800 border-2 border-slate-700 hover:border-yellow-400 hover:bg-slate-700 transition-all font-medium text-lg text-slate-200 shadow-sm hover:shadow-[0_0_15px_rgba(250,204,21,0.2)] hover:-translate-y-1 shrink-0">
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Initialize the React application directly onto the DOM
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
