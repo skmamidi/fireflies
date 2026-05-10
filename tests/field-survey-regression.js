@@ -95,6 +95,16 @@ async function assertBodyIncludes(page, expected) {
   );
 }
 
+async function assertShellBadge(page, expectedTitle) {
+  await page.waitForFunction((title) => {
+    const badgeTitle = document.querySelector('.badge-summary-panel h2')?.textContent?.trim();
+    return badgeTitle === title;
+  }, expectedTitle, { timeout: 60000 });
+
+  const text = await page.locator('.badge-summary-panel').innerText();
+  assert.ok(text.toLowerCase().includes('current mission'), `Badge summary should mark the active stage. Actual text:\n${text}`);
+}
+
 async function run() {
   const server = createServer();
   const baseUrl = await listen(server);
@@ -117,6 +127,9 @@ async function run() {
     await page.goto(new URL('field-survey.html', baseUrl).toString(), { waitUntil: 'networkidle', timeout: 60000 });
     await page.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
     await page.getByRole('heading', { name: 'Field Survey Lab' }).waitFor({ timeout: 60000 });
+    assert.ok(page.url().endsWith('/field-survey.html'), `field survey should stay on its dedicated stage page. Actual URL: ${page.url()}`);
+    assert.equal(await page.title(), 'Field Survey | Global Firefly Academy');
+    await assertShellBadge(page, 'Canopy Researcher');
 
     await assertBodyIncludes(page, 'Signal Field Guide');
     await assertBodyIncludes(page, 'Practice the patterns before the count');
