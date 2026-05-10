@@ -168,6 +168,22 @@ async function run() {
     assert.equal(await page.evaluate(() => window.localStorage.getItem('firefly-academy-current-stage')), '9');
     await assertBodyIncludes(page, 'Light Pollution');
 
+    const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    mobile.on('pageerror', (error) => browserErrors.push(error.message));
+    mobile.on('console', (message) => {
+      if (message.type() === 'error') browserErrors.push(message.text());
+    });
+    await addDeterministicSurvey(mobile);
+    await mobile.goto(new URL('field-survey.html', baseUrl).toString(), { waitUntil: 'networkidle', timeout: 60000 });
+    await mobile.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
+    await mobile.getByRole('heading', { name: 'Field Survey Lab' }).waitFor({ timeout: 60000 });
+    await mobile.getByRole('button', { name: /Start Field Survey/ }).tap();
+    await mobile.getByText('Active Transect').waitFor();
+    await assertBodyIncludes(mobile, 'Observation Log');
+    await mobile.locator('[data-survey-bug-type="smoky"]').first().tap();
+    await assertBodyIncludes(mobile, '1/2 targets, 0 false positives');
+    await mobile.close();
+
     assert.deepEqual(browserErrors, [], `browser errors:\n${browserErrors.join('\n')}`);
     console.log('Field survey regression passed');
   } finally {
