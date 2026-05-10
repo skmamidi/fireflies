@@ -1200,6 +1200,7 @@
       earnedCount,
       totalBadges,
       nextStage,
+      notebookStatus,
       onResumeNext,
       onWorkHere,
       onViewBadge
@@ -1252,6 +1253,11 @@
                   <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${isEarned ? 'bg-green-300 text-slate-950' : 'border border-slate-700 bg-slate-950/70 text-slate-300'}`}>
                     {isEarned ? 'Badge earned' : 'In progress'}
                   </span>
+                  {notebookStatus && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-cyan-300/35 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-cyan-100">
+                      <CheckCircle size={12} /> {notebookStatus.restored ? 'Restored from Notebook' : 'Saved to Notebook'}
+                    </span>
+                  )}
                 </div>
                 <div className="mt-2 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(14rem,0.42fr)] md:items-end">
                   <div className="min-w-0">
@@ -1363,26 +1369,135 @@
       );
     }
 
-    const readSessionArray = (key, fallback = []) => {
+    const NOTEBOOK_KEY_PREFIX = 'firefly-academy-notebook-';
+    const notebookStorageKey = (key) => key.startsWith('firefly-academy-') ? key : `${NOTEBOOK_KEY_PREFIX}${key}`;
+
+    const cloneNotebookValue = (value) => {
       try {
-        const stored = window.sessionStorage.getItem(key);
-        const parsed = stored ? JSON.parse(stored) : fallback;
-        return Array.isArray(parsed) ? parsed : fallback;
+        return JSON.parse(JSON.stringify(value));
       } catch {
-        return fallback;
+        return value;
       }
     };
 
-    const useSessionArray = (key, fallback = []) => {
-      const [items, setItems] = useState(() => readSessionArray(key, fallback));
+    const notebookSignature = (value) => {
+      try {
+        return JSON.stringify(value);
+      } catch {
+        return String(value);
+      }
+    };
+
+    const readStorageSafely = (storageName, key) => {
+      try {
+        const storage = window[storageName];
+        return storage?.getItem(key) || null;
+      } catch {
+        return null;
+      }
+    };
+
+    const writeStorageSafely = (storageName, key, value) => {
+      try {
+        window[storageName]?.setItem(key, value);
+      } catch {}
+    };
+
+    const removeStorageSafely = (storageName, key) => {
+      try {
+        window[storageName]?.removeItem(key);
+      } catch {}
+    };
+
+    const readStoredValue = (key, fallback, validate = () => true) => {
+      const storageKey = notebookStorageKey(key);
+      for (const storageName of ['localStorage', 'sessionStorage']) {
+        const stored = readStorageSafely(storageName, storageKey);
+        if (!stored) continue;
+        try {
+          const parsed = JSON.parse(stored);
+          if (validate(parsed)) return { value: parsed, restored: true };
+        } catch {}
+      }
+      return { value: cloneNotebookValue(fallback), restored: false };
+    };
+
+    const writeStoredValue = (key, value) => {
+      const storageKey = notebookStorageKey(key);
+      try {
+        const serialized = JSON.stringify(value);
+        writeStorageSafely('localStorage', storageKey, serialized);
+        writeStorageSafely('sessionStorage', storageKey, serialized);
+      } catch {}
+    };
+
+    const removeStoredValue = (key) => {
+      const storageKey = notebookStorageKey(key);
+      removeStorageSafely('localStorage', storageKey);
+      removeStorageSafely('sessionStorage', storageKey);
+    };
+
+    const isPlainNotebookObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+    const useMissionState = (key, fallback, options = {}) => {
+      const { validate = () => true, onStatus } = options;
+      const callbackRef = useRef(onStatus);
+      const fallbackRef = useRef(cloneNotebookValue(fallback));
+      const initialReadRef = useRef(null);
+      const [value, setValue] = useState(() => {
+        const result = readStoredValue(key, fallbackRef.current, validate);
+        initialReadRef.current = result;
+        return result.value;
+      });
+      const valueSignature = useMemo(() => notebookSignature(value), [value]);
 
       useEffect(() => {
-        try {
-          window.sessionStorage.setItem(key, JSON.stringify(items));
-        } catch {}
-      }, [key, items]);
+        callbackRef.current = onStatus;
+      }, [onStatus]);
 
-      return [items, setItems];
+      useEffect(() => {
+        const hasMeaningfulValue = valueSignature !== notebookSignature(fallbackRef.current);
+        if (hasMeaningfulValue) {
+          writeStoredValue(key, value);
+        } else {
+          removeStoredValue(key);
+        }
+        callbackRef.current?.(
+          hasMeaningfulValue || initialReadRef.current?.restored
+            ? { saved: hasMeaningfulValue, restored: Boolean(initialReadRef.current?.restored), key: notebookStorageKey(key) }
+            : null
+        );
+      }, [key, value, valueSignature]);
+
+      const reset = useCallback(() => {
+        initialReadRef.current = { value: cloneNotebookValue(fallbackRef.current), restored: false };
+        removeStoredValue(key);
+        setValue(cloneNotebookValue(fallbackRef.current));
+        callbackRef.current?.(null);
+      }, [key]);
+
+      return [value, setValue, { reset, restored: Boolean(initialReadRef.current?.restored) }];
+    };
+
+    const useSessionArray = (key, fallback = [], options = {}) => {
+      return useMissionState(key, fallback, {
+        ...options,
+        validate: (value) => Array.isArray(value) && (options.validate ? options.validate(value) : true)
+      });
+    };
+
+    const useNotebookField = (setState) => useCallback((field, nextValue) => {
+      setState(prev => ({
+        ...prev,
+        [field]: typeof nextValue === 'function' ? nextValue(prev[field]) : nextValue
+      }));
+    }, [setState]);
+
+    const includesSameItems = (value, allowedItems) => Array.isArray(value) && value.every(item => allowedItems.includes(item));
+
+    const validateNotebookObject = (requiredKeys, extraCheck = () => true) => (value) => {
+      if (!isPlainNotebookObject(value)) return false;
+      return requiredKeys.every(key => Object.prototype.hasOwnProperty.call(value, key)) && extraCheck(value);
     };
 
     function App() {
@@ -1400,6 +1515,7 @@
       const [fieldStamp, setFieldStamp] = useState(null);
       const [tapRipples, setTapRipples] = useState([]);
       const [stageProgress, setStageProgress] = useState({});
+      const [notebookStatus, setNotebookStatus] = useState(null);
       const [shellScrolled, setShellScrolled] = useState(false);
       const stageNavRef = useRef(null);
       const stageContentRef = useRef(null);
@@ -1450,6 +1566,13 @@
           }
           if (JSON.stringify(prev[stageId] || null) === JSON.stringify(progress)) return prev;
           return { ...prev, [stageId]: progress };
+        });
+      }, []);
+      const reportNotebookStatus = useCallback((stageId, status) => {
+        setNotebookStatus(prev => {
+          const next = status ? { stageId, ...status } : null;
+          if (JSON.stringify(prev || null) === JSON.stringify(next || null)) return prev;
+          return next;
         });
       }, []);
       const openStage = (stageIndex) => {
@@ -1715,6 +1838,7 @@
               earnedCount={earnedCount}
               totalBadges={stages.length}
               nextStage={nextUnfinishedStage}
+              notebookStatus={notebookStatus?.stageId === currentStageMeta.id ? notebookStatus : null}
               onResumeNext={resumeNextMission}
               onWorkHere={workOnCurrentMission}
               onViewBadge={() => setActiveBadgeId(currentStageMeta.id)}
@@ -1723,17 +1847,17 @@
             {/* Stage Renderer */}
             <div ref={stageContentRef} tabIndex="-1" className="flex-1 flex flex-col relative min-h-0 focus:outline-none">
               {currentStage === 0 && <StageIntro onComplete={() => completeStage('intro')} onProgress={(progress) => reportStageProgress('intro', progress)} />}
-              {currentStage === 1 && <StageFamilyTree onComplete={() => completeStage('familytree')} onProgress={(progress) => reportStageProgress('familytree', progress)} />}
-              {currentStage === 2 && <StageScience onComplete={() => completeStage('science')} onProgress={(progress) => reportStageProgress('science', progress)} />}
-              {currentStage === 3 && <StageGlowHall onComplete={() => completeStage('glowhall')} onProgress={(progress) => reportStageProgress('glowhall', progress)} />}
+              {currentStage === 1 && <StageFamilyTree onComplete={() => completeStage('familytree')} onProgress={(progress) => reportStageProgress('familytree', progress)} onNotebookStatus={(status) => reportNotebookStatus('familytree', status)} />}
+              {currentStage === 2 && <StageScience onComplete={() => completeStage('science')} onProgress={(progress) => reportStageProgress('science', progress)} onNotebookStatus={(status) => reportNotebookStatus('science', status)} />}
+              {currentStage === 3 && <StageGlowHall onComplete={() => completeStage('glowhall')} onProgress={(progress) => reportStageProgress('glowhall', progress)} onNotebookStatus={(status) => reportNotebookStatus('glowhall', status)} />}
               {currentStage === 4 && <StageSpecies onComplete={() => completeStage('species')} onEarn={() => earnBadge('species')} onProgress={(progress) => reportStageProgress('species', progress)} />}
               {currentStage === 5 && <StageMap onComplete={() => completeStage('map')} onEarn={() => earnBadge('map')} onProgress={(progress) => reportStageProgress('map', progress)} />}
               {currentStage === 6 && <StageTamagotchi onComplete={() => completeStage('tamagotchi')} onSkip={advanceStage} onProgress={(progress) => reportStageProgress('tamagotchi', progress)} />}
-              {currentStage === 7 && <StageBuildABug onComplete={() => completeStage('buildabug')} onProgress={(progress) => reportStageProgress('buildabug', progress)} />}
+              {currentStage === 7 && <StageBuildABug onComplete={() => completeStage('buildabug')} onProgress={(progress) => reportStageProgress('buildabug', progress)} onNotebookStatus={(status) => reportNotebookStatus('buildabug', status)} />}
               {currentStage === 8 && <StageResearcher onComplete={() => completeStage('researcher')} onSkip={advanceStage} onProgress={(progress) => reportStageProgress('researcher', progress)} />}
-              {currentStage === 9 && <StageLightPollution onComplete={() => completeStage('pollution')} onProgress={(progress) => reportStageProgress('pollution', progress)} />}
+              {currentStage === 9 && <StageLightPollution onComplete={() => completeStage('pollution')} onProgress={(progress) => reportStageProgress('pollution', progress)} onNotebookStatus={(status) => reportNotebookStatus('pollution', status)} />}
               {currentStage === 10 && <StageEcosystem onComplete={() => completeStage('ecosystem')} onEarn={() => earnBadge('ecosystem')} onProgress={(progress) => reportStageProgress('ecosystem', progress)} />}
-              {currentStage === 11 && <StageSanctuary onComplete={() => completeStage('sanctuary')} onProgress={(progress) => reportStageProgress('sanctuary', progress)} />}
+              {currentStage === 11 && <StageSanctuary onComplete={() => completeStage('sanctuary')} onProgress={(progress) => reportStageProgress('sanctuary', progress)} onNotebookStatus={(status) => reportNotebookStatus('sanctuary', status)} />}
               {currentStage === 12 && <StageTrivia onComplete={() => completeStage('trivia')} onSkip={advanceStage} onProgress={(progress) => reportStageProgress('trivia', progress)} />}
               {currentStage === 13 && <StageConservation onComplete={() => completeStage('conservation')} onRestart={() => setCurrentStage(0)} onProgress={(progress) => reportStageProgress('conservation', progress)} />}
             </div>
@@ -2178,7 +2302,7 @@
     }
 
     // --- STAGE 2: FIREFLY FAMILY TREE ---
-    function StageFamilyTree({ onComplete, onProgress }) {
+    function StageFamilyTree({ onComplete, onProgress, onNotebookStatus }) {
       const treeNodes = [
         { id: 'animalia', rank: 'Kingdom', label: 'Animalia', kidName: 'Animals', clue: 'Many-celled living things that eat food and move during at least part of life.', visual: 'animalia', x: 50, y: 10, color: 'from-green-400 to-lime-300' },
         { id: 'arthropoda', rank: 'Phylum', label: 'Arthropoda', kidName: 'Joint-Legged Animals', clue: 'Animals with outside skeletons and bendy jointed legs, like insects, spiders, and crabs.', visual: 'arthropoda', x: 50, y: 27, color: 'from-cyan-400 to-blue-300' },
@@ -2197,32 +2321,43 @@
         { id: 'photinus', title: 'Photinus Branch', subtitle: 'One group of flashers', visual: 'photinus' }
       ];
 
-      const [selectedTile, setSelectedTile] = useState(null);
-      const [placements, setPlacements] = useState({});
-      const [activeNodeId, setActiveNodeId] = useState('lampyridae');
+      const treeNodeIds = treeNodes.map(node => node.id);
+      const tileIds = tiles.map(tile => tile.id);
+      const [treeNotebook, setTreeNotebook, treeNotebookMeta] = useMissionState('familytree', {
+        selectedTile: null,
+        placements: {},
+        activeNodeId: 'lampyridae'
+      }, {
+        onStatus: onNotebookStatus,
+        validate: validateNotebookObject(['selectedTile', 'placements', 'activeNodeId'], value => (
+          (value.selectedTile === null || tileIds.includes(value.selectedTile)) &&
+          treeNodeIds.includes(value.activeNodeId) &&
+          isPlainNotebookObject(value.placements) &&
+          Object.keys(value.placements).every(nodeId => treeNodeIds.includes(nodeId) && tileIds.includes(value.placements[nodeId]))
+        ))
+      });
+      const setTreeField = useNotebookField(setTreeNotebook);
+      const { selectedTile, placements, activeNodeId } = treeNotebook;
+      const setSelectedTile = (tileId) => setTreeField('selectedTile', tileId);
 
       const correctCount = treeNodes.filter(node => placements[node.id] === node.id).length;
       const isComplete = correctCount === treeNodes.length;
       const activeNode = treeNodes.find(node => node.id === activeNodeId) || treeNodes[0];
 
       const handleNodeClick = (nodeId) => {
-        setActiveNodeId(nodeId);
-        if (!selectedTile) return;
-        setPlacements(prev => {
-          const next = { ...prev };
+        setTreeNotebook(prev => {
+          if (!prev.selectedTile) return { ...prev, activeNodeId: nodeId };
+          const next = { ...prev.placements };
           Object.keys(next).forEach(key => {
-            if (next[key] === selectedTile) delete next[key];
+            if (next[key] === prev.selectedTile) delete next[key];
           });
-          next[nodeId] = selectedTile;
-          return next;
+          next[nodeId] = prev.selectedTile;
+          return { ...prev, activeNodeId: nodeId, placements: next, selectedTile: null };
         });
-        setSelectedTile(null);
       };
 
       const resetTree = () => {
-        setPlacements({});
-        setSelectedTile(null);
-        setActiveNodeId('lampyridae');
+        treeNotebookMeta.reset();
       };
 
       const getPlacedTile = (nodeId) => tiles.find(tile => tile.id === placements[nodeId]);
@@ -2387,11 +2522,7 @@
     }
 
     // --- STAGE 2: SCIENCE ---
-    function StageScience({ onComplete, onProgress }) {
-      const [mixed, setMixed] = useState(false);
-      const [visitedIngredientIds, setVisitedIngredientIds] = useState([]);
-      const [activeIngredientId, setActiveIngredientId] = useState('luciferin');
-
+    function StageScience({ onComplete, onProgress, onNotebookStatus }) {
       const ingredients = [
         {
           id: 'luciferin',
@@ -2428,12 +2559,33 @@
         }
       ];
 
+      const ingredientIds = ingredients.map(item => item.id);
+      const [scienceNotebook, setScienceNotebook] = useMissionState('science', {
+        mixed: false,
+        visitedIngredientIds: [],
+        activeIngredientId: 'luciferin'
+      }, {
+        onStatus: onNotebookStatus,
+        validate: validateNotebookObject(['mixed', 'visitedIngredientIds', 'activeIngredientId'], value => (
+          typeof value.mixed === 'boolean' &&
+          ingredientIds.includes(value.activeIngredientId) &&
+          includesSameItems(value.visitedIngredientIds, ingredientIds)
+        ))
+      });
+      const setScienceField = useNotebookField(setScienceNotebook);
+      const { mixed, visitedIngredientIds, activeIngredientId } = scienceNotebook;
+      const setMixed = (nextValue) => setScienceField('mixed', nextValue);
       const activeIngredient = ingredients.find(item => item.id === activeIngredientId) || ingredients[0];
       const allIngredientsVisited = ingredients.every(item => visitedIngredientIds.includes(item.id));
 
       const visitIngredient = (ingredientId) => {
-        setActiveIngredientId(ingredientId);
-        setVisitedIngredientIds(prev => prev.includes(ingredientId) ? prev : [...prev, ingredientId]);
+        setScienceNotebook(prev => ({
+          ...prev,
+          activeIngredientId: ingredientId,
+          visitedIngredientIds: prev.visitedIngredientIds.includes(ingredientId)
+            ? prev.visitedIngredientIds
+            : [...prev.visitedIngredientIds, ingredientId]
+        }));
       };
 
       const handleCatalyze = () => {
@@ -2979,7 +3131,7 @@
     }
 
     // --- STAGE 4: GLOW HALL OF FAME ---
-    function StageGlowHall({ onComplete, onProgress }) {
+    function StageGlowHall({ onComplete, onProgress, onNotebookStatus }) {
       const organisms = [
         {
           id: 'firefly',
@@ -3098,8 +3250,22 @@
         { id: 'spores', title: 'Spread Spores', icon: <Trees size={20} />, color: 'border-green-400 bg-green-950/40 text-green-200', hint: 'Fungus helper delivery' }
       ];
 
-      const [selectedId, setSelectedId] = useState('firefly');
-      const [assignments, setAssignments] = useState({});
+      const organismIds = organisms.map(org => org.id);
+      const zoneIds = zones.map(zone => zone.id);
+      const [hallNotebook, setHallNotebook, hallNotebookMeta] = useMissionState('glowhall', {
+        selectedId: 'firefly',
+        assignments: {}
+      }, {
+        onStatus: onNotebookStatus,
+        validate: validateNotebookObject(['selectedId', 'assignments'], value => (
+          organismIds.includes(value.selectedId) &&
+          isPlainNotebookObject(value.assignments) &&
+          Object.keys(value.assignments).every(orgId => organismIds.includes(orgId) && zoneIds.includes(value.assignments[orgId]))
+        ))
+      });
+      const setHallField = useNotebookField(setHallNotebook);
+      const { selectedId, assignments } = hallNotebook;
+      const setSelectedId = (nextId) => setHallField('selectedId', nextId);
 
       const selected = organisms.find(org => org.id === selectedId) || organisms[0];
       const correctCount = organisms.filter(org => assignments[org.id] === org.category).length;
@@ -3107,14 +3273,19 @@
       const isComplete = correctCount === organisms.length;
 
       const assignSelected = (zoneId) => {
-        setAssignments(prev => ({ ...prev, [selectedId]: zoneId }));
-        const nextUnassigned = organisms.find(org => org.id !== selectedId && !assignments[org.id]);
-        if (nextUnassigned) setSelectedId(nextUnassigned.id);
+        setHallNotebook(prev => {
+          const nextAssignments = { ...prev.assignments, [prev.selectedId]: zoneId };
+          const nextUnassigned = organisms.find(org => org.id !== prev.selectedId && !nextAssignments[org.id]);
+          return {
+            ...prev,
+            assignments: nextAssignments,
+            selectedId: nextUnassigned ? nextUnassigned.id : prev.selectedId
+          };
+        });
       };
 
       const resetHall = () => {
-        setAssignments({});
-        setSelectedId('firefly');
+        hallNotebookMeta.reset();
       };
 
       const zoneForSelected = zones.find(zone => zone.id === selected.category);
@@ -4766,13 +4937,7 @@
     }
 
     // --- STAGE 6: BUILD-A-BUG EVOLUTIONARY SANDBOX ---
-    function StageBuildABug({ onComplete, onProgress }) {
-      const [color, setColor] = useState('yellow');
-      const [signal, setSignal] = useState('delayed');
-      const [habitat, setHabitat] = useState('forest');
-      const [nursery, setNursery] = useState('mud');
-      const [flight, setFlight] = useState('edge');
-      const [hypothesis, setHypothesis] = useState('mate');
+    function StageBuildABug({ onComplete, onProgress, onNotebookStatus }) {
       const [gameState, setGameState] = useState('building');
       const [result, setResult] = useState(null);
 
@@ -4896,6 +5061,39 @@
         energy: { title: 'Energy Budget', icon: <Zap size={16} />, bar: 'bg-yellow-400', plain: 'energy' },
         larvae: { title: 'Larva Nursery', icon: <Leaf size={16} />, bar: 'bg-lime-400', plain: 'larva nursery' }
       };
+
+      const habitatIds = Object.keys(habitats);
+      const signalIds = signalOptions.map(option => option.id);
+      const colorIds = colorOptions.map(option => option.id);
+      const nurseryIds = nurseryOptions.map(option => option.id);
+      const flightIds = flightOptions.map(option => option.id);
+      const hypothesisIds = Object.keys(categoryMeta);
+      const [bugNotebook, setBugNotebook] = useMissionState('buildabug', {
+        color: 'yellow',
+        signal: 'delayed',
+        habitat: 'forest',
+        nursery: 'mud',
+        flight: 'edge',
+        hypothesis: 'mate'
+      }, {
+        onStatus: onNotebookStatus,
+        validate: validateNotebookObject(['color', 'signal', 'habitat', 'nursery', 'flight', 'hypothesis'], value => (
+          colorIds.includes(value.color) &&
+          signalIds.includes(value.signal) &&
+          habitatIds.includes(value.habitat) &&
+          nurseryIds.includes(value.nursery) &&
+          flightIds.includes(value.flight) &&
+          hypothesisIds.includes(value.hypothesis)
+        ))
+      });
+      const setBugField = useNotebookField(setBugNotebook);
+      const { color, signal, habitat, nursery, flight, hypothesis } = bugNotebook;
+      const setColor = (nextValue) => setBugField('color', nextValue);
+      const setSignal = (nextValue) => setBugField('signal', nextValue);
+      const setHabitat = (nextValue) => setBugField('habitat', nextValue);
+      const setNursery = (nextValue) => setBugField('nursery', nextValue);
+      const setFlight = (nextValue) => setBugField('flight', nextValue);
+      const setHypothesis = (nextValue) => setBugField('hypothesis', nextValue);
 
       const habitatData = habitats[habitat];
       const selectedSignal = signalOptions.find(option => option.id === signal);
@@ -5805,12 +6003,29 @@
     }
 
     // --- STAGE 8: LIGHT POLLUTION SIMULATOR ---
-    function StageLightPollution({ onComplete, onProgress }) {
-      const [urban, setUrban] = useState(0);
-      const [cars, setCars] = useState(0);
-      const [flashlights, setFlashlights] = useState(0);
-      const [hasSeenCritical, setHasSeenCritical] = useState(false);
-      const [activeFixIds, setActiveFixIds] = useState([]);
+    function StageLightPollution({ onComplete, onProgress, onNotebookStatus }) {
+      const [lightNotebook, setLightNotebook] = useMissionState('pollution', {
+        urban: 0,
+        cars: 0,
+        flashlights: 0,
+        hasSeenCritical: false,
+        activeFixIds: []
+      }, {
+        onStatus: onNotebookStatus,
+        validate: validateNotebookObject(['urban', 'cars', 'flashlights', 'hasSeenCritical', 'activeFixIds'], value => (
+          ['urban', 'cars', 'flashlights'].every(key => Number.isFinite(value[key]) && value[key] >= 0 && value[key] <= 100) &&
+          typeof value.hasSeenCritical === 'boolean' &&
+          Array.isArray(value.activeFixIds) &&
+          value.activeFixIds.every(id => typeof id === 'string')
+        ))
+      });
+      const setLightField = useNotebookField(setLightNotebook);
+      const { urban, cars, flashlights, hasSeenCritical, activeFixIds } = lightNotebook;
+      const setUrban = (nextValue) => setLightField('urban', nextValue);
+      const setCars = (nextValue) => setLightField('cars', nextValue);
+      const setFlashlights = (nextValue) => setLightField('flashlights', nextValue);
+      const setHasSeenCritical = (nextValue) => setLightField('hasSeenCritical', nextValue);
+      const setActiveFixIds = (nextValue) => setLightField('activeFixIds', nextValue);
 
       const lightSources = [
         {
@@ -6735,7 +6950,7 @@
     }
 
     // --- STAGE 12: BACKYARD SANCTUARY BUILDER ---
-    function StageSanctuary({ onComplete, onProgress }) {
+    function StageSanctuary({ onComplete, onProgress, onNotebookStatus }) {
       const actions = [
         { id: 'leafLitter', title: 'Leaf Litter Nursery', type: 'help', points: 16, icon: <Leaf size={20} />, tag: 'Habitat', desc: 'Leaves keep eggs and larvae moist, hidden, and safer from heat.' },
         { id: 'nativePlants', title: 'Native Plant Maze', type: 'help', points: 14, icon: <Sprout size={20} />, tag: 'Shelter', desc: 'Native grasses, shrubs, and flowers make cool, damp hiding places.' },
@@ -6752,12 +6967,25 @@
       ];
 
       const startingThreats = ['whiteFlood', 'pesticide', 'shortLawn', 'rakedClean', 'creekTrash'];
-      const [selected, setSelected] = useState(startingThreats);
-      const [activeId, setActiveId] = useState('whiteFlood');
+      const actionIds = actions.map(action => action.id);
+      const [sanctuaryNotebook, setSanctuaryNotebook] = useMissionState('sanctuary', {
+        selected: startingThreats,
+        activeId: 'whiteFlood'
+      }, {
+        onStatus: onNotebookStatus,
+        validate: validateNotebookObject(['selected', 'activeId'], value => (
+          includesSameItems(value.selected, actionIds) &&
+          actionIds.includes(value.activeId)
+        ))
+      });
+      const { selected, activeId } = sanctuaryNotebook;
 
       const toggleAction = (id) => {
-        setSelected(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
-        setActiveId(id);
+        setSanctuaryNotebook(prev => ({
+          ...prev,
+          selected: prev.selected.includes(id) ? prev.selected.filter(item => item !== id) : [...prev.selected, id],
+          activeId: id
+        }));
       };
 
       const activeAction = actions.find(action => action.id === activeId) || actions[0];
