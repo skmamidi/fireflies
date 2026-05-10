@@ -110,6 +110,19 @@ async function assertCompassIncludes(page, expected) {
   );
 }
 
+async function assertShellBadge(page, expectedTitle, expectedStatus = 'Current Mission') {
+  await page.waitForFunction((title) => {
+    const badgeTitle = document.querySelector('.badge-summary-panel h2')?.textContent?.trim();
+    return badgeTitle === title;
+  }, expectedTitle, { timeout: 60000 });
+
+  const text = await page.locator('.badge-summary-panel').innerText();
+  assert.ok(
+    text.toLowerCase().includes(expectedStatus.toLowerCase()),
+    `Badge shell should include "${expectedStatus}". Actual text:\n${text}`
+  );
+}
+
 async function storedCurrentStage(page) {
   return page.evaluate(() => window.localStorage.getItem('firefly-academy-current-stage'));
 }
@@ -149,6 +162,8 @@ async function run() {
     await assertCompassIncludes(page, 'Start Journey');
     await assertCompassIncludes(page, 'Start the expedition and set your first field note.');
     await assertCompassIncludes(page, 'Ready to launch');
+    await assertShellBadge(page, 'First Flash');
+    assert.equal(await page.title(), 'Start Journey | Global Firefly Academy');
     assert.equal(await page.locator('[data-stage-index="5"]').getAttribute('href'), './global-map.html');
     assert.equal(await storedCurrentStage(page), '0');
 
@@ -158,6 +173,8 @@ async function run() {
     await assertCompassIncludes(page, 'Collect field stamps across United States and worldwide habitats.');
     await assertCompassIncludes(page, '1/11 atlas stamps');
     await assertCompassIncludes(page, 'Resume Start Journey');
+    await assertShellBadge(page, 'Field Atlas');
+    assert.equal(await page.title(), 'Global Map | Global Firefly Academy');
     assert.equal(await storedCurrentStage(page), '5');
     assert.ok(page.url().endsWith('/global-map.html'), `stage navigation should expose the stage HTML URL. Actual URL: ${page.url()}`);
 
@@ -166,12 +183,15 @@ async function run() {
     await assertCompassIncludes(page, 'Mission 6/14');
     await assertCompassIncludes(page, 'Global Map');
     await assertCompassIncludes(page, '1/11 atlas stamps');
+    await assertShellBadge(page, 'Field Atlas');
+    assert.equal(await page.title(), 'Global Map | Global Firefly Academy');
     assert.equal(await storedCurrentStage(page), '5');
 
     await page.getByRole('button', { name: /Resume Start Journey/ }).click();
     await page.waitForTimeout(250);
     await assertCompassIncludes(page, 'Mission 1/14');
     await assertCompassIncludes(page, 'Keep Working Here');
+    await assertShellBadge(page, 'First Flash');
     assert.equal(await storedCurrentStage(page), '0');
 
     await page.getByRole('button', { name: 'Begin Global Research' }).click();
@@ -181,6 +201,8 @@ async function run() {
     await assertCompassIncludes(page, 'Build the science family tree from kingdom to firefly branch.');
     await assertCompassIncludes(page, '0/6 branches matched');
     assert.equal(await storedCurrentStage(page), '1');
+    await assertShellBadge(page, 'Lampyridae Lineage');
+    assert.equal(await page.title(), 'Family Tree | Global Firefly Academy');
     assert.equal(
       await page.locator('header button[aria-label^="First Flash:"]').getAttribute('aria-label'),
       'First Flash: earned'
@@ -232,7 +254,23 @@ async function run() {
     await assertCompassIncludes(stageEntry, 'Global Map');
     await assertCompassIncludes(stageEntry, '1/11 atlas stamps');
     assert.ok(stageEntry.url().endsWith('/global-map.html'), `direct stage entry should settle on the stage HTML URL. Actual URL: ${stageEntry.url()}`);
+    await assertShellBadge(stageEntry, 'Field Atlas');
+    assert.equal(await stageEntry.title(), 'Global Map | Global Firefly Academy');
     await stageEntry.close();
+
+    const surveyEntry = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    surveyEntry.on('pageerror', (error) => browserErrors.push(error.message));
+    surveyEntry.on('console', (message) => {
+      if (message.type() === 'error') browserErrors.push(message.text());
+    });
+    await loadClean(surveyEntry, new URL('field-survey.html', url).toString());
+    await assertCompassIncludes(surveyEntry, 'Mission 9/14');
+    await assertCompassIncludes(surveyEntry, 'Field Survey');
+    await surveyEntry.getByRole('heading', { name: 'Field Survey Lab' }).waitFor({ timeout: 60000 });
+    assert.ok(surveyEntry.url().endsWith('/field-survey.html'), `field survey should settle on its stage HTML URL. Actual URL: ${surveyEntry.url()}`);
+    await assertShellBadge(surveyEntry, 'Canopy Researcher');
+    assert.equal(await surveyEntry.title(), 'Field Survey | Global Firefly Academy');
+    await surveyEntry.close();
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     mobile.on('pageerror', (error) => browserErrors.push(error.message));
@@ -247,6 +285,14 @@ async function run() {
     await assertCompassIncludes(mobile, 'Mission 6/14');
     await assertCompassIncludes(mobile, '1/11 atlas stamps');
     assert.equal(await storedCurrentStage(mobile), '5');
+    await assertShellBadge(mobile, 'Field Atlas');
+    await mobile.evaluate(() => window.scrollTo(0, 420));
+    await mobile.waitForFunction(() => {
+      const element = document.querySelector('.badge-summary-panel');
+      if (!element) return false;
+      const style = window.getComputedStyle(element);
+      return Number.parseFloat(style.opacity) < 0.1 && style.maxHeight === '0px';
+    }, null, { timeout: 60000 });
     await mobile.close();
 
     assert.deepEqual(browserErrors, [], `browser errors:\n${browserErrors.join('\n')}`);
