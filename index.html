@@ -31,7 +31,7 @@
 
   <!-- Our Application Code -->
   <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useMemo, useRef, useId } from 'react';
+    import React, { useState, useEffect, useMemo, useRef, useId, useCallback } from 'react';
     import { createRoot } from 'react-dom/client';
     import { 
       Bug, Map as MapIcon, ShieldCheck, Award, Zap, LightbulbOff, 
@@ -1042,11 +1042,79 @@
       }
     };
 
+    const STAGE_ROUTES = [
+      { id: 'intro', file: 'start-journey.html', slug: 'start-journey' },
+      { id: 'familytree', file: 'family-tree.html', slug: 'family-tree' },
+      { id: 'science', file: 'bioluminescence.html', slug: 'bioluminescence' },
+      { id: 'glowhall', file: 'glow-hall.html', slug: 'glow-hall' },
+      { id: 'species', file: 'meet-the-bugs.html', slug: 'meet-the-bugs' },
+      { id: 'map', file: 'global-map.html', slug: 'global-map' },
+      { id: 'tamagotchi', file: 'raise-a-firefly.html', slug: 'raise-a-firefly' },
+      { id: 'buildabug', file: 'build-a-bug.html', slug: 'build-a-bug' },
+      { id: 'researcher', file: 'field-survey.html', slug: 'field-survey' },
+      { id: 'pollution', file: 'light-pollution.html', slug: 'light-pollution' },
+      { id: 'ecosystem', file: 'ecosystem-role.html', slug: 'ecosystem-role' },
+      { id: 'sanctuary', file: 'sanctuary-yard.html', slug: 'sanctuary-yard' },
+      { id: 'trivia', file: 'trivia-arcade.html', slug: 'trivia-arcade' },
+      { id: 'conservation', file: 'ranger-test.html', slug: 'ranger-test' }
+    ];
+
+    const STAGE_ROUTE_BY_ID = STAGE_ROUTES.reduce((routes, route) => ({ ...routes, [route.id]: route }), {});
+    const STAGE_INDEX_BY_ID = STAGE_ROUTES.reduce((routes, route, index) => ({ ...routes, [route.id]: index }), {});
+    const STAGE_ID_BY_TOKEN = STAGE_ROUTES.reduce((routes, route) => {
+      const baseFile = route.file.replace(/\.html$/i, '');
+      return {
+        ...routes,
+        [route.id]: route.id,
+        [route.slug]: route.id,
+        [baseFile]: route.id
+      };
+    }, {});
+
+    const normalizeStageToken = (value = '') => value.toLowerCase().replace(/\.html$/i, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const stageHrefFor = (stageId) => `./${STAGE_ROUTE_BY_ID[stageId]?.file || 'index.html'}`;
+
+    const readLinkedStageId = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const requested = params.get('stage') || params.get('tab') || params.get('mission');
+        const token = requested || (window.location.hash ? window.location.hash.slice(1) : '');
+        const tokenMatch = STAGE_ID_BY_TOKEN[normalizeStageToken(token)];
+        if (tokenMatch) return tokenMatch;
+
+        const fileName = decodeURIComponent(window.location.pathname.split('/').pop() || '');
+        if (fileName && fileName.toLowerCase() !== 'index.html') {
+          return STAGE_ID_BY_TOKEN[normalizeStageToken(fileName)] || null;
+        }
+      } catch {}
+      return null;
+    };
+
+    const readLinkedStageIndex = () => {
+      const stageId = readLinkedStageId();
+      return stageId && Number.isInteger(STAGE_INDEX_BY_ID[stageId]) ? STAGE_INDEX_BY_ID[stageId] : null;
+    };
+
+    const syncStageUrl = (stageId, { replace = false } = {}) => {
+      try {
+        const route = STAGE_ROUTE_BY_ID[stageId];
+        if (!route || !window.history?.pushState) return;
+        const nextUrl = new URL(route.file, window.location.href);
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.pathname === nextUrl.pathname && !currentUrl.search && !currentUrl.hash) return;
+        const method = replace ? 'replaceState' : 'pushState';
+        window.history[method]({ stageId }, '', route.file);
+      } catch {}
+    };
+
     const readStoredCurrentStage = () => {
+      const linkedStageIndex = readLinkedStageIndex();
+      if (linkedStageIndex !== null) return linkedStageIndex;
+
       try {
         const stored = window.localStorage.getItem('firefly-academy-current-stage');
         const parsed = Number.parseInt(stored, 10);
-        return Number.isInteger(parsed) ? Math.max(0, Math.min(13, parsed)) : 0;
+        return Number.isInteger(parsed) ? Math.max(0, Math.min(STAGE_ROUTES.length - 1, parsed)) : 0;
       } catch {
         return 0;
       }
@@ -1057,6 +1125,7 @@
       stageIndex,
       totalStages,
       mission,
+      progress,
       isEarned,
       earnedCount,
       totalBadges,
@@ -1064,7 +1133,21 @@
       onResumeNext,
       onViewBadge
     }) {
-      const steps = mission?.steps || [stage.badge.how, 'Complete the section challenge', 'Claim the field badge'];
+      const missionSteps = mission?.steps || [stage.badge.how, 'Complete the section challenge', 'Claim the field badge'];
+      const rawSteps = progress?.steps?.length ? progress.steps : missionSteps;
+      const steps = rawSteps.map((step, index) => {
+        const normalized = typeof step === 'string' ? { label: step } : step;
+        const fallbackStatus = index === 0 ? 'active' : 'locked';
+        return {
+          label: normalized.label,
+          status: isEarned ? 'done' : (normalized.status || fallbackStatus)
+        };
+      });
+      const progressTotal = Number.isFinite(progress?.total) && progress.total > 0 ? progress.total : null;
+      const progressValue = progressTotal ? Math.max(0, Math.min(progressTotal, Number(progress?.value) || 0)) : null;
+      const progressPercent = progressTotal ? Math.round((progressValue / progressTotal) * 100) : 0;
+      const progressLabel = progress?.label || (isEarned ? 'Mission complete' : null);
+      const guideNudge = progress?.nudge || mission?.nudge || 'Follow the current section challenge to unlock the badge.';
       const showResume = nextStage && nextStage.id !== stage.id;
 
       return (
@@ -1091,10 +1174,21 @@
                 </div>
                 <h2 className="mt-3 text-2xl font-black leading-tight text-white">{stage.title}</h2>
                 <p className="mt-1 text-sm leading-relaxed text-slate-300">{mission?.brief || stage.badge.how}</p>
+                {progressTotal && (
+                  <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-950/60 px-3 py-2" aria-label={`${progressLabel} progress`}>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-400">Live field progress</span>
+                      <span className="text-xs font-black text-yellow-200">{progressLabel}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-800" role="progressbar" aria-valuemin="0" aria-valuemax={progressTotal} aria-valuenow={progressValue}>
+                      <div className="h-full rounded-full bg-gradient-to-r from-yellow-300 via-green-300 to-cyan-300 transition-all duration-500" style={{ width: `${isEarned ? 100 : progressPercent}%` }}></div>
+                    </div>
+                  </div>
+                )}
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
                   <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-950/60 px-3 py-2">
                     <span className="quest-guide-firefly shrink-0" aria-hidden="true"></span>
-                    <p className="text-sm font-semibold leading-snug text-slate-200">{mission?.nudge || 'Follow the current section challenge to unlock the badge.'}</p>
+                    <p className="text-sm font-semibold leading-snug text-slate-200">{guideNudge}</p>
                   </div>
                   <button
                     type="button"
@@ -1109,17 +1203,17 @@
 
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
               {steps.map((step, index) => {
-                const checked = isEarned;
-                const active = !isEarned && index === 0;
+                const checked = step.status === 'done';
+                const active = step.status === 'active';
                 return (
                   <div
-                    key={step}
+                    key={`${step.label}-${index}`}
                     className={`quest-compass-step flex min-h-[3.25rem] items-center gap-3 rounded-2xl border px-3 py-2 text-sm ${checked ? 'border-green-300/45 bg-green-950/30 text-green-100' : active ? 'is-active border-yellow-300/45 bg-yellow-300/10 text-yellow-100' : 'border-slate-700 bg-slate-950/50 text-slate-400'}`}
                   >
                     <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${checked ? 'bg-green-300 text-slate-950' : active ? 'bg-yellow-300 text-slate-950' : 'bg-slate-800 text-slate-500'}`}>
                       {checked ? <CheckCircle size={16} /> : active ? <Target size={15} /> : <Clock size={14} />}
                     </span>
-                    <span className="font-bold leading-snug">{step}</span>
+                    <span className="font-bold leading-snug">{step.label}</span>
                   </div>
                 );
               })}
@@ -1184,10 +1278,14 @@
       const [badgeCelebration, setBadgeCelebration] = useState(null);
       const [fieldStamp, setFieldStamp] = useState(null);
       const [tapRipples, setTapRipples] = useState([]);
+      const [stageProgress, setStageProgress] = useState({});
       const stageNavRef = useRef(null);
       const celebrationTimerRef = useRef(null);
       const fieldStampTimerRef = useRef(null);
       const rippleTimersRef = useRef([]);
+      const initialLinkedStageIdRef = useRef(readLinkedStageId());
+      const routeSyncReadyRef = useRef(false);
+      const suppressNextRouteSyncRef = useRef(false);
 
       const stages = [
         { id: 'intro', title: "Start Journey", icon: <Zap size={20} />, badge: { name: 'First Flash', how: 'Begin the expedition from the welcome screen.', colors: ['#facc15', '#22c55e', '#fef08a', '#0f172a'] } },
@@ -1204,7 +1302,7 @@
         { id: 'sanctuary', title: "Sanctuary Yard", icon: <HeartHandshake size={20} />, badge: { name: 'Sanctuary Designer', how: 'Build a yard with at least 85% habitat health.', colors: ['#16a34a', '#f97316', '#fef08a', '#14532d'] } },
         { id: 'trivia', title: "100 Fun Facts", icon: <HelpCircle size={20} />, badge: { name: 'Trivia Spark', how: 'Answer 10 firefly trivia questions correctly.', colors: ['#facc15', '#ec4899', '#fde68a', '#701a75'] } },
         { id: 'conservation', title: "Ranger Test", icon: <ShieldCheck size={20} />, badge: { name: 'Master Ranger', how: 'Pass the ranger rescue test, then take the Firefly Ranger pledge.', colors: ['#22c55e', '#0f766e', '#facc15', '#052e16'] } },
-      ];
+      ].map(stage => ({ ...stage, href: stageHrefFor(stage.id) }));
 
       const activeBadge = stages.find(stage => stage.id === activeBadgeId) || stages[0];
       const currentStageMeta = stages[currentStage] || stages[0];
@@ -1215,8 +1313,21 @@
       const earnedCount = earnedBadgeIds.filter(id => stages.some(stage => stage.id === id)).length;
       const isBadgeEarned = (stageId) => earnedBadgeIds.includes(stageId);
       const currentMission = QUEST_MISSIONS[currentStageMeta.id] || null;
+      const currentStageProgress = stageProgress[currentStageMeta.id] || null;
       const nextUnfinishedIndex = stages.findIndex(stage => !isBadgeEarned(stage.id));
       const nextUnfinishedStage = nextUnfinishedIndex >= 0 ? stages[nextUnfinishedIndex] : null;
+      const reportStageProgress = useCallback((stageId, progress) => {
+        setStageProgress(prev => {
+          if (!progress) {
+            if (!Object.prototype.hasOwnProperty.call(prev, stageId)) return prev;
+            const next = { ...prev };
+            delete next[stageId];
+            return next;
+          }
+          if (JSON.stringify(prev[stageId] || null) === JSON.stringify(progress)) return prev;
+          return { ...prev, [stageId]: progress };
+        });
+      }, []);
       const openStage = (stageIndex) => {
         const boundedIndex = Math.max(0, Math.min(stages.length - 1, stageIndex));
         setCurrentStage(boundedIndex);
@@ -1298,6 +1409,31 @@
         const activeStageButton = stageNavRef.current?.querySelector(`[data-stage-index="${currentStage}"]`);
         activeStageButton?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }, [currentStage]);
+
+      useEffect(() => {
+        const handlePopState = (event) => {
+          const stageId = event.state?.stageId || readLinkedStageId();
+          if (!stageId || !Number.isInteger(STAGE_INDEX_BY_ID[stageId])) return;
+          suppressNextRouteSyncRef.current = true;
+          setCurrentStage(STAGE_INDEX_BY_ID[stageId]);
+          setActiveBadgeId(stageId);
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+      }, []);
+
+      useEffect(() => {
+        if (!routeSyncReadyRef.current) {
+          routeSyncReadyRef.current = true;
+          if (initialLinkedStageIdRef.current) syncStageUrl(currentStageMeta.id, { replace: true });
+          return;
+        }
+        if (suppressNextRouteSyncRef.current) {
+          suppressNextRouteSyncRef.current = false;
+          return;
+        }
+        syncStageUrl(currentStageMeta.id);
+      }, [currentStageMeta.id]);
 
       useEffect(() => {
         return () => {
@@ -1400,10 +1536,12 @@
                 const isCompleted = isBadgeEarned(stage.id);
                 const isCurrent = currentStage === idx;
                 return (
-                  <button 
+                  <a
                     key={stage.id}
+                    href={stage.href}
                     data-stage-index={idx}
-                    onClick={() => {
+                    onClick={(event) => {
+                      event.preventDefault();
                       openStage(idx);
                     }}
                     aria-current={isCurrent ? 'step' : undefined}
@@ -1413,7 +1551,7 @@
                       {isCompleted && !isCurrent ? <CheckCircle size={18} /> : stage.icon}
                     </div>
                     <span className={`text-[10px] lg:text-xs font-bold px-2 rounded-md whitespace-nowrap ${isCurrent ? 'bg-slate-900 text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>{stage.title}</span>
-                  </button>
+                  </a>
                 )
               })}
               </div>
@@ -1424,6 +1562,7 @@
               stageIndex={currentStage}
               totalStages={stages.length}
               mission={currentMission}
+              progress={currentStageProgress}
               isEarned={isBadgeEarned(currentStageMeta.id)}
               earnedCount={earnedCount}
               totalBadges={stages.length}
@@ -1434,20 +1573,20 @@
 
             {/* Stage Renderer */}
             <div className="flex-1 flex flex-col relative min-h-0">
-              {currentStage === 0 && <StageIntro onComplete={() => completeStage('intro')} />}
-              {currentStage === 1 && <StageFamilyTree onComplete={() => completeStage('familytree')} />}
-              {currentStage === 2 && <StageScience onComplete={() => completeStage('science')} />}
-              {currentStage === 3 && <StageGlowHall onComplete={() => completeStage('glowhall')} />}
-              {currentStage === 4 && <StageSpecies onComplete={() => completeStage('species')} onEarn={() => earnBadge('species')} />}
-              {currentStage === 5 && <StageMap onComplete={() => completeStage('map')} onEarn={() => earnBadge('map')} />}
-              {currentStage === 6 && <StageTamagotchi onComplete={() => completeStage('tamagotchi')} onSkip={advanceStage} />}
-              {currentStage === 7 && <StageBuildABug onComplete={() => completeStage('buildabug')} />}
-              {currentStage === 8 && <StageResearcher onComplete={() => completeStage('researcher')} onSkip={advanceStage} />}
-              {currentStage === 9 && <StageLightPollution onComplete={() => completeStage('pollution')} />}
-              {currentStage === 10 && <StageEcosystem onComplete={() => completeStage('ecosystem')} onEarn={() => earnBadge('ecosystem')} />}
-              {currentStage === 11 && <StageSanctuary onComplete={() => completeStage('sanctuary')} />}
-              {currentStage === 12 && <StageTrivia onComplete={() => completeStage('trivia')} onSkip={advanceStage} />}
-              {currentStage === 13 && <StageConservation onComplete={() => completeStage('conservation')} onRestart={() => setCurrentStage(0)} />}
+              {currentStage === 0 && <StageIntro onComplete={() => completeStage('intro')} onProgress={(progress) => reportStageProgress('intro', progress)} />}
+              {currentStage === 1 && <StageFamilyTree onComplete={() => completeStage('familytree')} onProgress={(progress) => reportStageProgress('familytree', progress)} />}
+              {currentStage === 2 && <StageScience onComplete={() => completeStage('science')} onProgress={(progress) => reportStageProgress('science', progress)} />}
+              {currentStage === 3 && <StageGlowHall onComplete={() => completeStage('glowhall')} onProgress={(progress) => reportStageProgress('glowhall', progress)} />}
+              {currentStage === 4 && <StageSpecies onComplete={() => completeStage('species')} onEarn={() => earnBadge('species')} onProgress={(progress) => reportStageProgress('species', progress)} />}
+              {currentStage === 5 && <StageMap onComplete={() => completeStage('map')} onEarn={() => earnBadge('map')} onProgress={(progress) => reportStageProgress('map', progress)} />}
+              {currentStage === 6 && <StageTamagotchi onComplete={() => completeStage('tamagotchi')} onSkip={advanceStage} onProgress={(progress) => reportStageProgress('tamagotchi', progress)} />}
+              {currentStage === 7 && <StageBuildABug onComplete={() => completeStage('buildabug')} onProgress={(progress) => reportStageProgress('buildabug', progress)} />}
+              {currentStage === 8 && <StageResearcher onComplete={() => completeStage('researcher')} onSkip={advanceStage} onProgress={(progress) => reportStageProgress('researcher', progress)} />}
+              {currentStage === 9 && <StageLightPollution onComplete={() => completeStage('pollution')} onProgress={(progress) => reportStageProgress('pollution', progress)} />}
+              {currentStage === 10 && <StageEcosystem onComplete={() => completeStage('ecosystem')} onEarn={() => earnBadge('ecosystem')} onProgress={(progress) => reportStageProgress('ecosystem', progress)} />}
+              {currentStage === 11 && <StageSanctuary onComplete={() => completeStage('sanctuary')} onProgress={(progress) => reportStageProgress('sanctuary', progress)} />}
+              {currentStage === 12 && <StageTrivia onComplete={() => completeStage('trivia')} onSkip={advanceStage} onProgress={(progress) => reportStageProgress('trivia', progress)} />}
+              {currentStage === 13 && <StageConservation onComplete={() => completeStage('conservation')} onRestart={() => setCurrentStage(0)} onProgress={(progress) => reportStageProgress('conservation', progress)} />}
             </div>
           </main>
         </div>
@@ -1852,7 +1991,21 @@
     }
 
     // --- STAGE 1: INTRO ---
-    function StageIntro({ onComplete }) {
+    function StageIntro({ onComplete, onProgress }) {
+      useEffect(() => {
+        onProgress?.({
+          value: 0,
+          total: 1,
+          label: 'Ready to launch',
+          nudge: 'Tap Begin Global Research to stamp your first field note.',
+          steps: [
+            { label: 'Read the expedition brief', status: 'done' },
+            { label: 'Begin global research', status: 'active' },
+            { label: 'Collect the First Flash badge', status: 'locked' }
+          ]
+        });
+      }, [onProgress]);
+
       return (
         <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in zoom-in duration-500">
           <div className="relative p-4">
@@ -1876,7 +2029,7 @@
     }
 
     // --- STAGE 2: FIREFLY FAMILY TREE ---
-    function StageFamilyTree({ onComplete }) {
+    function StageFamilyTree({ onComplete, onProgress }) {
       const treeNodes = [
         { id: 'animalia', rank: 'Kingdom', label: 'Animalia', kidName: 'Animals', clue: 'Many-celled living things that eat food and move during at least part of life.', visual: 'animalia', x: 50, y: 10, color: 'from-green-400 to-lime-300' },
         { id: 'arthropoda', rank: 'Phylum', label: 'Arthropoda', kidName: 'Joint-Legged Animals', clue: 'Animals with outside skeletons and bendy jointed legs, like insects, spiders, and crabs.', visual: 'arthropoda', x: 50, y: 27, color: 'from-cyan-400 to-blue-300' },
@@ -1925,6 +2078,25 @@
 
       const getPlacedTile = (nodeId) => tiles.find(tile => tile.id === placements[nodeId]);
       const usedTileIds = Object.values(placements);
+
+      useEffect(() => {
+        const selected = tiles.find(tile => tile.id === selectedTile);
+        onProgress?.({
+          value: correctCount,
+          total: treeNodes.length,
+          label: `${correctCount}/${treeNodes.length} branches matched`,
+          nudge: isComplete
+            ? 'Every branch is glowing correctly. Unlock the Glow Lab when you are ready.'
+            : selected
+              ? `Place ${selected.title} on the branch that matches its clue.`
+              : 'Choose a clue tile, then tap the matching branch on the tree.',
+          steps: [
+            { label: 'Choose a clue tile', status: selectedTile || usedTileIds.length ? 'done' : 'active' },
+            { label: 'Place clues on the matching branches', status: isComplete ? 'done' : selectedTile || correctCount ? 'active' : 'locked' },
+            { label: 'Unlock the glow lab when all branches are correct', status: isComplete ? 'active' : 'locked' }
+          ]
+        });
+      }, [correctCount, isComplete, selectedTile, usedTileIds.length, onProgress]);
 
       return (
         <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0">
@@ -2066,7 +2238,7 @@
     }
 
     // --- STAGE 2: SCIENCE ---
-    function StageScience({ onComplete }) {
+    function StageScience({ onComplete, onProgress }) {
       const [mixed, setMixed] = useState(false);
       const [visitedIngredientIds, setVisitedIngredientIds] = useState([]);
       const [activeIngredientId, setActiveIngredientId] = useState('luciferin');
@@ -2119,6 +2291,26 @@
         if (!allIngredientsVisited) return;
         setMixed(true);
       };
+
+      useEffect(() => {
+        const visitedCount = mixed ? ingredients.length : visitedIngredientIds.length;
+        const missingIngredients = ingredients.filter(item => !visitedIngredientIds.includes(item.id)).map(item => item.name);
+        onProgress?.({
+          value: visitedCount,
+          total: ingredients.length,
+          label: `${visitedCount}/${ingredients.length} ingredients studied`,
+          nudge: mixed
+            ? 'The lantern reaction is lit. Enter the Glow Hall to compare other living lights.'
+            : allIngredientsVisited
+              ? 'All ingredients are ready. Catalyze the glow in the chamber.'
+              : `Open ${missingIngredients[0] || activeIngredient.name} to complete the lantern recipe.`,
+          steps: [
+            { label: 'Study luciferin', status: visitedIngredientIds.includes('luciferin') || mixed ? 'done' : 'active' },
+            { label: 'Study luciferase and oxygen', status: (visitedIngredientIds.includes('luciferase') && visitedIngredientIds.includes('oxygen')) || mixed ? 'done' : visitedIngredientIds.includes('luciferin') ? 'active' : 'locked' },
+            { label: 'Catalyze the reaction', status: mixed ? 'done' : allIngredientsVisited ? 'active' : 'locked' }
+          ]
+        });
+      }, [mixed, visitedIngredientIds.length, activeIngredient.name, allIngredientsVisited, onProgress]);
 
       const natureGlowCards = [
         {
@@ -2638,7 +2830,7 @@
     }
 
     // --- STAGE 4: GLOW HALL OF FAME ---
-    function StageGlowHall({ onComplete }) {
+    function StageGlowHall({ onComplete, onProgress }) {
       const organisms = [
         {
           id: 'firefly',
@@ -2778,6 +2970,24 @@
 
       const zoneForSelected = zones.find(zone => zone.id === selected.category);
       const selectedGlowFact = GLOW_HALL_GLOW_FACTS[selected.id] || GLOW_HALL_GLOW_FACTS.firefly;
+
+      useEffect(() => {
+        onProgress?.({
+          value: correctCount,
+          total: organisms.length,
+          label: `${correctCount}/${organisms.length} glow cases sorted`,
+          nudge: isComplete
+            ? 'The hall is curated. Move on to meet real firefly species.'
+            : assignments[selectedId]
+              ? `${selected.name} is filed. Pick another organism or adjust the case.`
+              : `Decide why ${selected.name} glows, then choose the matching purpose case.`,
+          steps: [
+            { label: 'Pick an organism', status: selectedId ? 'done' : 'active' },
+            { label: 'Choose its glow purpose', status: assignments[selectedId] ? 'done' : 'active' },
+            { label: 'Sort every organism into a case', status: isComplete ? 'done' : assignedCount ? 'active' : 'locked' }
+          ]
+        });
+      }, [correctCount, assignedCount, isComplete, selectedId, selected.name, assignments[selectedId], onProgress]);
 
       return (
         <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0">
@@ -2931,7 +3141,7 @@
     }
 
     // --- STAGE 3: GLOBAL SPECIES ANIMATIONS ---
-    function StageSpecies({ onComplete, onEarn }) {
+    function StageSpecies({ onComplete, onEarn, onProgress }) {
       const [activeSpecies, setActiveSpecies] = useState(null);
       const [visitedSpeciesIds, setVisitedSpeciesIds] = useSessionArray('firefly-academy-session-species-studied', []);
 
@@ -2955,6 +3165,24 @@
       useEffect(() => {
         if (speciesComplete) onEarn();
       }, [speciesComplete]);
+
+      useEffect(() => {
+        onProgress?.({
+          value: visitedSpeciesIds.length,
+          total: speciesList.length,
+          label: `${visitedSpeciesIds.length}/${speciesList.length} species studied`,
+          nudge: speciesComplete
+            ? 'Every signature species is in your field notes. The global map is ready.'
+            : activeSpecies
+              ? `${activeSpecies.name} is logged. Pick another species from the field index.`
+              : 'Select a species card to study its range, rhythm, and glow style.',
+          steps: [
+            { label: 'Open a species card', status: visitedSpeciesIds.length ? 'done' : 'active' },
+            { label: 'Scan its range and signal notes', status: activeSpecies ? 'done' : visitedSpeciesIds.length ? 'active' : 'locked' },
+            { label: 'Study all species in the collection', status: speciesComplete ? 'done' : visitedSpeciesIds.length ? 'active' : 'locked' }
+          ]
+        });
+      }, [visitedSpeciesIds.length, speciesComplete, activeSpecies?.id, onProgress]);
 
       const selectSpecies = (species) => {
         setActiveSpecies(species);
@@ -3074,7 +3302,7 @@
     }
 
     // --- STAGE 4: GLOBAL MAP ---
-    function StageMap({ onComplete, onEarn }) {
+    function StageMap({ onComplete, onEarn, onProgress }) {
       const [activeLocation, setActiveLocation] = useState(null);
       const [mapView, setMapView] = useState('us'); // 'us' or 'global'
       const [visitedIds, setVisitedIds] = useSessionArray('firefly-academy-session-map-stamps', []);
@@ -3313,6 +3541,8 @@
       const featuredLocation = activeLocation || activeLocationsList[0];
       const visitedCount = activeLocationsList.filter(loc => visitedIds.includes(loc.id)).length;
       const totalVisitedCount = allLocations.filter(loc => visitedIds.includes(loc.id)).length;
+      const usVisitedCount = usLocations.filter(loc => visitedIds.includes(loc.id)).length;
+      const globalVisitedCount = globalLocations.filter(loc => visitedIds.includes(loc.id)).length;
       const atlasComplete = totalVisitedCount === allLocations.length;
       const sparklePositions = [
         { left: 18, top: 42, delay: 0 },
@@ -3356,6 +3586,26 @@
       useEffect(() => {
         if (atlasComplete) onEarn();
       }, [atlasComplete]);
+
+      useEffect(() => {
+        const otherRegion = mapView === 'us' ? 'Worldwide' : 'United States';
+        const activeRegionComplete = visitedCount === activeLocationsList.length;
+        onProgress?.({
+          value: totalVisitedCount,
+          total: allLocations.length,
+          label: `${totalVisitedCount}/${allLocations.length} atlas stamps`,
+          nudge: atlasComplete
+            ? 'Your passport is full. Continue to raise a firefly.'
+            : activeRegionComplete
+              ? `${otherRegion} still has stamps waiting. Switch maps to keep exploring.`
+              : `${featuredLocation.shortName} is selected. Open unvisited markers to stamp the passport.`,
+          steps: [
+            { label: 'Visit a map marker', status: totalVisitedCount ? 'done' : 'active' },
+            { label: 'Switch between map regions', status: usVisitedCount && globalVisitedCount ? 'done' : totalVisitedCount ? 'active' : 'locked' },
+            { label: 'Fill the field-log passport', status: atlasComplete ? 'done' : totalVisitedCount ? 'active' : 'locked' }
+          ]
+        });
+      }, [totalVisitedCount, visitedCount, usVisitedCount, globalVisitedCount, atlasComplete, mapView, featuredLocation.shortName, onProgress]);
 
       useEffect(() => {
         if (!sweepOn) return;
@@ -3661,7 +3911,7 @@
     }
 
     // --- STAGE 5: LIFE-CYCLE TAMAGOTCHI ---
-    function StageTamagotchi({ onComplete, onSkip }) {
+    function StageTamagotchi({ onComplete, onSkip, onProgress }) {
       const startingLog = [
         { id: 'start', text: 'Field log opened: eggs are tucked into damp leaf litter, rotting wood, or protected soil.' }
       ];
@@ -3800,6 +4050,28 @@
       const showPupa = currentLife.id === 'pupa';
       const showAdult = currentLife.id === 'adult';
       const threatIsActive = Boolean(activeChallenge);
+
+      useEffect(() => {
+        onProgress?.({
+          value: month,
+          total: 24,
+          label: `${month}/24 months guided`,
+          nudge: gameState === 'success'
+            ? 'Metamorphosis is complete. Continue while the adult lantern is shining.'
+            : gameState === 'gameover'
+              ? 'The refuge failed. Restart the life cycle and stabilize the weakest habitat need.'
+              : gameState === 'playing'
+                ? activeChallenge
+                  ? `${activeChallenge.title}: lift ${activeChallenge.need} before time passes.`
+                  : `${currentLife.label} stage is stable at ${habitatAverage}% habitat health.`
+                : 'Start the life-cycle simulation to guide the egg through adulthood.',
+          steps: [
+            { label: 'Start the life cycle', status: gameState === 'intro' ? 'active' : 'done' },
+            { label: 'Balance food, water, shelter, and darkness', status: gameState === 'success' ? 'done' : gameState === 'playing' || gameState === 'gameover' ? 'active' : 'locked' },
+            { label: 'Guide the pupa into adulthood', status: gameState === 'success' ? 'done' : month >= 21 ? 'active' : 'locked' }
+          ]
+        });
+      }, [month, gameState, currentLife.label, habitatAverage, activeChallenge?.id, activeChallenge?.need, onProgress]);
 
       const staticLeafPositions = useMemo(() => {
         return Array.from({ length: 58 }).map(() => ({
@@ -4345,7 +4617,7 @@
     }
 
     // --- STAGE 6: BUILD-A-BUG EVOLUTIONARY SANDBOX ---
-    function StageBuildABug({ onComplete }) {
+    function StageBuildABug({ onComplete, onProgress }) {
       const [color, setColor] = useState('yellow');
       const [signal, setSignal] = useState('delayed');
       const [habitat, setHabitat] = useState('forest');
@@ -4574,6 +4846,27 @@
       };
 
       const report = calculateReport();
+
+      useEffect(() => {
+        const shownReport = result || report;
+        onProgress?.({
+          value: shownReport.score,
+          total: 100,
+          label: `${shownReport.score}/100 niche fit`,
+          nudge: gameState === 'result'
+            ? shownReport.success
+              ? 'This build fits the niche. Continue while the evidence is fresh.'
+              : shownReport.nextStep
+            : shownReport.success
+              ? 'The live model predicts a strong fit. Run the natural-selection test.'
+              : `Tune the weakest pressure: ${categoryMeta[shownReport.lowestCategory].plain}.`,
+          steps: [
+            { label: 'Choose habitat pressure', status: 'done' },
+            { label: 'Tune signal, color, nursery, and flight', status: shownReport.success ? 'done' : 'active' },
+            { label: 'Run the natural-selection test', status: gameState === 'result' ? shownReport.success ? 'done' : 'active' : shownReport.success ? 'active' : 'locked' }
+          ]
+        });
+      }, [report.score, report.success, report.lowestCategory, gameState, result?.score, result?.success, onProgress]);
 
       const runSimulation = () => {
         const simulationReport = calculateReport();
@@ -4883,7 +5176,7 @@
     }
 
     // --- STAGE 7: FIELD RESEARCHER (CITIZEN SCIENCE) ---
-    function StageResearcher({ onComplete, onSkip }) {
+    function StageResearcher({ onComplete, onSkip, onProgress }) {
       const [gameState, setGameState] = useState('intro'); // intro, playing, timeout_trigger, result
       const [bugs, setBugs] = useState([]);
       const [targetType, setTargetType] = useState('smoky');
@@ -4967,6 +5260,29 @@
           handleSubmit();
         }
       }, [gameState]);
+
+      useEffect(() => {
+        const targetBugs = bugs.filter(bug => bug.type === targetType);
+        const targetCount = targetBugs.length;
+        const correctTagged = taggedIds.filter(id => id.startsWith(targetType)).length;
+        onProgress?.({
+          value: gameState === 'intro' ? 0 : results ? results.correctTags : correctTagged,
+          total: gameState === 'intro' ? 1 : Math.max(1, targetCount),
+          label: gameState === 'intro' ? 'Ready to survey' : `${correctTagged}/${targetCount || '?'} targets tagged`,
+          nudge: gameState === 'result'
+            ? results?.success
+              ? 'The field count is clean. Submit the survey badge.'
+              : 'Compare the flash intervals, then retry the survey.'
+            : gameState === 'playing'
+              ? `Tag only ${bugConfigs[targetType].name}s before the timer reaches zero.`
+              : 'Start the survey to receive a target flash pattern.',
+          steps: [
+            { label: 'Start the survey', status: gameState === 'intro' ? 'active' : 'done' },
+            { label: 'Watch the target pattern', status: gameState === 'playing' ? 'active' : gameState === 'result' ? 'done' : 'locked' },
+            { label: 'Submit a clean field count', status: results?.success ? 'done' : gameState === 'result' ? 'active' : gameState === 'playing' ? 'active' : 'locked' }
+          ]
+        });
+      }, [gameState, bugs.length, targetType, taggedIds.length, results?.success, results?.correctTags, onProgress]);
 
       if (gameState === 'intro') {
         return (
@@ -5113,7 +5429,7 @@
     }
 
     // --- STAGE 8: LIGHT POLLUTION SIMULATOR ---
-    function StageLightPollution({ onComplete }) {
+    function StageLightPollution({ onComplete, onProgress }) {
       const [urban, setUrban] = useState(0);
       const [cars, setCars] = useState(0);
       const [flashlights, setFlashlights] = useState(0);
@@ -5136,6 +5452,24 @@
       useEffect(() => {
         if (totalPollution >= 70) setHasSeenCritical(true);
       }, [totalPollution]);
+
+      useEffect(() => {
+        onProgress?.({
+          value: darkSkyRestored ? 2 : hasSeenCritical ? 1 : 0,
+          total: 2,
+          label: darkSkyRestored ? 'Dark sky restored' : hasSeenCritical ? 'Critical warning seen' : `${Math.round(totalPollution)}% light stress`,
+          nudge: darkSkyRestored
+            ? 'The habitat is dark again. Continue to the ecosystem lab.'
+            : hasSeenCritical
+              ? 'Now lower every light source until the sky returns below 20%.'
+              : 'Raise the light stressors until the critical warning appears.',
+          steps: [
+            { label: 'Raise the light stressors', status: hasSeenCritical ? 'done' : 'active' },
+            { label: 'Observe the flash-signal trouble', status: hasSeenCritical ? 'done' : 'locked' },
+            { label: 'Return the night to a safe darkness', status: darkSkyRestored ? 'done' : hasSeenCritical ? 'active' : 'locked' }
+          ]
+        });
+      }, [darkSkyRestored, hasSeenCritical, totalPollution, onProgress]);
 
       return (
         <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0">
@@ -5249,7 +5583,7 @@
     }
 
     // --- STAGE 9: ECOSYSTEM ROLE ---
-    function StageEcosystem({ onComplete, onEarn }) {
+    function StageEcosystem({ onComplete, onEarn, onProgress }) {
       const [activeTab, setActiveTab] = useState('importance');
       const [visitedTabs, setVisitedTabs] = useSessionArray('firefly-academy-session-ecosystem-tabs', ['importance']);
       const [activeNodeId, setActiveNodeId] = useState('larvae');
@@ -5468,6 +5802,21 @@
       useEffect(() => {
         if (ecosystemComplete) onEarn();
       }, [ecosystemComplete]);
+
+      useEffect(() => {
+        onProgress?.({
+          value: visitedTabs.length,
+          total: tabs.length,
+          label: `${visitedTabs.length}/${tabs.length} ecosystem labs explored`,
+          nudge: ecosystemComplete
+            ? 'The food web story is complete. Continue to design a sanctuary yard.'
+            : `${tabs.find(tab => tab.id === activeTab)?.title || 'This lab'} is open. Visit each tab to connect the whole ecosystem.`,
+          steps: tabs.map(tab => ({
+            label: tab.title === 'Food Web Lab' ? 'Open the food-web lab' : tab.title === 'Health Signal' ? 'Check habitat-health signals' : 'Build a glow rescue plan',
+            status: visitedTabs.includes(tab.id) ? 'done' : activeTab === tab.id ? 'active' : 'locked'
+          }))
+        });
+      }, [visitedTabs.length, activeTab, ecosystemComplete, onProgress]);
 
       return (
         <div className="flex flex-col space-y-4 animate-in slide-in-from-right duration-500 h-full">
@@ -5783,7 +6132,7 @@
     }
 
     // --- STAGE 12: BACKYARD SANCTUARY BUILDER ---
-    function StageSanctuary({ onComplete }) {
+    function StageSanctuary({ onComplete, onProgress }) {
       const actions = [
         { id: 'leafLitter', title: 'Leaf Litter Nursery', type: 'help', points: 16, icon: <Leaf size={20} />, tag: 'Habitat', desc: 'Leaves keep eggs and larvae moist, hidden, and safer from heat.' },
         { id: 'nativePlants', title: 'Native Plant Maze', type: 'help', points: 14, icon: <Sprout size={20} />, tag: 'Shelter', desc: 'Native grasses, shrubs, and flowers make cool, damp hiding places.' },
@@ -5821,6 +6170,24 @@
 
       const levelLabel = score >= 85 ? 'Firefly Sanctuary' : score >= 65 ? 'Promising Habitat' : score >= 40 ? 'Needs Ranger Help' : 'Flash Signal Trouble';
       const levelColor = score >= 85 ? 'text-green-300' : score >= 65 ? 'text-yellow-300' : score >= 40 ? 'text-orange-300' : 'text-red-300';
+
+      useEffect(() => {
+        onProgress?.({
+          value: score,
+          total: 100,
+          label: `${score}% habitat health`,
+          nudge: sanctuaryReady
+            ? 'This yard is sanctuary-ready. Open the trivia arcade when you are set.'
+            : selectedThreats.length
+              ? `Fix ${selectedThreats[0].title} and add helper features to raise habitat health.`
+              : 'Add more helper actions until the yard reaches 85% health.',
+          steps: [
+            { label: 'Add helpful habitat features', status: selectedHelps.length >= 4 ? 'done' : 'active' },
+            { label: 'Remove or avoid threats', status: selectedThreats.length === 0 ? 'done' : selectedHelps.length ? 'active' : 'locked' },
+            { label: 'Reach a healthy sanctuary score', status: sanctuaryReady ? 'done' : score >= 65 ? 'active' : 'locked' }
+          ]
+        });
+      }, [score, sanctuaryReady, selectedThreats.length, selectedThreats[0]?.id, selectedHelps.length, onProgress]);
 
       return (
         <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0">
@@ -6335,7 +6702,7 @@
       );
     }
 
-    function StageTrivia({ onComplete, onSkip }) {
+    function StageTrivia({ onComplete, onSkip, onProgress }) {
       const [gameState, setGameState] = useState('start'); // start, playing, gameover
       const [questionIndex, setQuestionIndex] = useState(0);
       const [roundId, setRoundId] = useState(0);
@@ -6357,6 +6724,26 @@
       const isLastQuestion = questionIndex >= shuffledQuestions.length - 1;
       const answeredCount = feedback ? questionIndex + 1 : questionIndex;
       const progressPct = Math.min(100, (answeredCount / TRIVIA_DB.length) * 100);
+
+      useEffect(() => {
+        onProgress?.({
+          value: Math.min(score, triviaGoal),
+          total: triviaGoal,
+          label: `${Math.min(score, triviaGoal)}/${triviaGoal} correct answers`,
+          nudge: triviaComplete
+            ? 'You have enough correct answers to claim the Trivia Spark badge.'
+            : gameState === 'playing'
+              ? feedback
+                ? 'Read the explanation, then move to the next fact.'
+                : `Question ${questionIndex + 1} is ready. Build toward ten correct answers.`
+              : 'Start the arcade to begin collecting correct answers.',
+          steps: [
+            { label: 'Start the trivia arcade', status: gameState === 'start' ? 'active' : 'done' },
+            { label: 'Answer ten questions correctly', status: triviaComplete ? 'done' : gameState === 'playing' ? 'active' : 'locked' },
+            { label: 'Continue to the ranger test', status: triviaComplete ? 'active' : 'locked' }
+          ]
+        });
+      }, [score, triviaComplete, gameState, feedback?.correct, questionIndex, onProgress]);
 
       const handleStart = () => {
         setScore(0);
@@ -6526,7 +6913,7 @@
     }
 
     // --- STAGE 10: CONSERVATION RANGER TEST ---
-    function StageConservation({ onComplete, onRestart }) {
+    function StageConservation({ onComplete, onRestart, onProgress }) {
       const [currentQ, setCurrentQ] = useState(0);
       const [score, setScore] = useState(0);
       const [phase, setPhase] = useState('briefing');
@@ -6646,6 +7033,29 @@
       const q = questions[currentQ];
       const habitatHealth = Math.min(100, 35 + score * 13 + (feedback?.correct ? 6 : 0));
       const pledgeReady = passed && pledgedLines.length === pledgeLines.length && rangerName.trim().length > 0;
+
+      useEffect(() => {
+        const pledgePhase = phase === 'pledge' || phase === 'complete';
+        onProgress?.({
+          value: pledgePhase ? pledgedLines.length : score,
+          total: pledgePhase ? pledgeLines.length : questions.length,
+          label: pledgePhase ? `${pledgedLines.length}/${pledgeLines.length} pledge promises` : `${score}/${questions.length} rescue choices`,
+          nudge: phase === 'complete'
+            ? 'Master Ranger badge complete. The academy loop is ready to restart.'
+            : phase === 'pledge'
+              ? 'Tap each promise, then sign your ranger name to finish.'
+              : phase === 'result'
+                ? passed ? 'You passed the test. Take the pledge to finish.' : 'Retake the test and aim for four strong choices.'
+                : phase === 'quiz'
+                  ? feedback ? 'Read the ranger lesson, then continue to the next mission.' : 'Choose the action that protects habitat first.'
+                  : 'Start the final ranger test when you are ready.',
+          steps: [
+            { label: 'Start the ranger test', status: phase === 'briefing' ? 'active' : 'done' },
+            { label: 'Choose the best rescue actions', status: passed ? 'done' : phase === 'quiz' || phase === 'result' ? 'active' : 'locked' },
+            { label: 'Take the Firefly Ranger pledge', status: phase === 'complete' ? 'done' : passed ? 'active' : 'locked' }
+          ]
+        });
+      }, [phase, score, passed, pledgedLines.length, feedback?.correct, rangerName, onProgress]);
 
       if (phase === 'briefing') {
         return (

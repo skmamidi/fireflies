@@ -177,6 +177,10 @@ async function run() {
     ]) {
       await clickFirstButtonContaining(page, speciesName);
     }
+    await page.waitForFunction(() => {
+      const studied = JSON.parse(window.sessionStorage.getItem('firefly-academy-session-species-studied') || '[]');
+      return studied.length === 11;
+    });
     await expectBadge(page, 'Species Scout', 'earned');
     assert.equal((await storedArray(page, 'firefly-academy-session-species-studied')).length, 11);
 
@@ -212,6 +216,10 @@ async function run() {
     ]) {
       await page.getByRole('button', { name: `Open ${locationName}` }).click();
     }
+    await page.waitForFunction(() => {
+      const stamps = JSON.parse(window.sessionStorage.getItem('firefly-academy-session-map-stamps') || '[]');
+      return stamps.length === 11;
+    });
     await expectBadge(page, 'Field Atlas', 'earned');
     assert.equal((await storedArray(page, 'firefly-academy-session-map-stamps')).length, 11);
 

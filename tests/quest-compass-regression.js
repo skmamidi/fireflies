@@ -24,6 +24,22 @@ try {
 }
 
 const ROOT = path.resolve(__dirname, '..');
+const STAGE_ENTRY_FILES = [
+  ['start-journey.html', 'stage=intro'],
+  ['family-tree.html', 'stage=familytree'],
+  ['bioluminescence.html', 'stage=science'],
+  ['glow-hall.html', 'stage=glowhall'],
+  ['meet-the-bugs.html', 'stage=species'],
+  ['global-map.html', 'stage=map'],
+  ['raise-a-firefly.html', 'stage=tamagotchi'],
+  ['build-a-bug.html', 'stage=buildabug'],
+  ['field-survey.html', 'stage=researcher'],
+  ['light-pollution.html', 'stage=pollution'],
+  ['ecosystem-role.html', 'stage=ecosystem'],
+  ['sanctuary-yard.html', 'stage=sanctuary'],
+  ['trivia-arcade.html', 'stage=trivia'],
+  ['ranger-test.html', 'stage=conservation']
+];
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -104,6 +120,11 @@ async function openStage(page, index) {
 }
 
 async function run() {
+  for (const [file, target] of STAGE_ENTRY_FILES) {
+    const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    assert.ok(html.includes(`./index.html?${target}`), `${file} should redirect to ${target}`);
+  }
+
   const server = createServer();
   const url = await listen(server);
   const browser = await chromium.launch({
@@ -127,19 +148,24 @@ async function run() {
     await assertCompassIncludes(page, 'Mission 1/14');
     await assertCompassIncludes(page, 'Start Journey');
     await assertCompassIncludes(page, 'Start the expedition and set your first field note.');
+    await assertCompassIncludes(page, 'Ready to launch');
+    assert.equal(await page.locator('[data-stage-index="5"]').getAttribute('href'), './global-map.html');
     assert.equal(await storedCurrentStage(page), '0');
 
     await openStage(page, 5);
     await assertCompassIncludes(page, 'Mission 6/14');
     await assertCompassIncludes(page, 'Global Map');
     await assertCompassIncludes(page, 'Collect field stamps across United States and worldwide habitats.');
+    await assertCompassIncludes(page, '1/11 atlas stamps');
     await assertCompassIncludes(page, 'Resume Start Journey');
     assert.equal(await storedCurrentStage(page), '5');
+    assert.ok(page.url().endsWith('/global-map.html'), `stage navigation should expose the stage HTML URL. Actual URL: ${page.url()}`);
 
     await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
     await page.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
     await assertCompassIncludes(page, 'Mission 6/14');
     await assertCompassIncludes(page, 'Global Map');
+    await assertCompassIncludes(page, '1/11 atlas stamps');
     assert.equal(await storedCurrentStage(page), '5');
 
     await page.getByRole('button', { name: /Resume Start Journey/ }).click();
@@ -153,6 +179,7 @@ async function run() {
     await assertCompassIncludes(page, 'Mission 2/14');
     await assertCompassIncludes(page, 'Family Tree');
     await assertCompassIncludes(page, 'Build the science family tree from kingdom to firefly branch.');
+    await assertCompassIncludes(page, '0/6 branches matched');
     assert.equal(await storedCurrentStage(page), '1');
     assert.equal(
       await page.locator('header button[aria-label^="First Flash:"]').getAttribute('aria-label'),
@@ -164,11 +191,48 @@ async function run() {
     assert.equal(await page.locator('header h2').last().innerText(), 'Lampyridae Lineage');
 
     await page.evaluate(() => window.localStorage.setItem('firefly-academy-current-stage', '99'));
-    await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
     await page.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
     await assertCompassIncludes(page, 'Mission 14/14');
     await assertCompassIncludes(page, 'Ranger Test');
     assert.equal(await storedCurrentStage(page), '13');
+
+    await openStage(page, 4);
+    await assertCompassIncludes(page, 'Mission 5/14');
+    await assertCompassIncludes(page, '0/11 species studied');
+    await page.getByRole('button', { name: /Snappy Single Sync/ }).first().click();
+    await page.waitForTimeout(150);
+    await assertCompassIncludes(page, '1/11 species studied');
+    await page.getByRole('button', { name: /Smoky Mountain Sync/ }).first().click();
+    await page.waitForTimeout(150);
+    await assertCompassIncludes(page, '2/11 species studied');
+
+    await openStage(page, 5);
+    await assertCompassIncludes(page, '1/11 atlas stamps');
+    await page.getByRole('button', { name: 'Worldwide' }).click();
+    await page.waitForTimeout(250);
+    await assertCompassIncludes(page, '2/11 atlas stamps');
+
+    await openStage(page, 10);
+    await assertCompassIncludes(page, '1/3 ecosystem labs explored');
+    await page.getByRole('button', { name: /Health Signal/ }).click();
+    await page.waitForTimeout(150);
+    await assertCompassIncludes(page, '2/3 ecosystem labs explored');
+    await page.getByRole('button', { name: /Glow Rescue/ }).click();
+    await page.waitForTimeout(150);
+    await assertCompassIncludes(page, '3/3 ecosystem labs explored');
+
+    const stageEntry = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    stageEntry.on('pageerror', (error) => browserErrors.push(error.message));
+    stageEntry.on('console', (message) => {
+      if (message.type() === 'error') browserErrors.push(message.text());
+    });
+    await loadClean(stageEntry, new URL('global-map.html', url).toString());
+    await assertCompassIncludes(stageEntry, 'Mission 6/14');
+    await assertCompassIncludes(stageEntry, 'Global Map');
+    await assertCompassIncludes(stageEntry, '1/11 atlas stamps');
+    assert.ok(stageEntry.url().endsWith('/global-map.html'), `direct stage entry should settle on the stage HTML URL. Actual URL: ${stageEntry.url()}`);
+    await stageEntry.close();
 
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     mobile.on('pageerror', (error) => browserErrors.push(error.message));
@@ -178,9 +242,10 @@ async function run() {
     await loadClean(mobile, url);
     await assertCompassIncludes(mobile, 'Field Journal');
     await assertCompassIncludes(mobile, 'Mission 1/14');
-    await mobile.getByRole('button', { name: 'Global Map' }).tap();
+    await mobile.locator('[data-stage-index="5"]').tap();
     await mobile.waitForTimeout(250);
     await assertCompassIncludes(mobile, 'Mission 6/14');
+    await assertCompassIncludes(mobile, '1/11 atlas stamps');
     assert.equal(await storedCurrentStage(mobile), '5');
     await mobile.close();
 
