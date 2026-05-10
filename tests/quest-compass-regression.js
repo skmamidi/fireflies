@@ -185,6 +185,7 @@ async function run() {
     await assertCompassIncludes(page, 'Start Journey');
     await assertCompassIncludes(page, 'Start the expedition and set your first field note.');
     await assertCompassIncludes(page, 'Ready to launch');
+    await assertCompassIncludes(page, 'Work on This Mission');
     await assertShellBadge(page, 'First Flash');
     await assertActivityAboveFold(page, 320, 'Start Journey desktop');
     assert.equal(await page.locator('.quest-journal-details').count(), 0, 'mission journal should be compact by default');
@@ -201,7 +202,8 @@ async function run() {
     await assertCompassIncludes(page, 'Global Map');
     await assertCompassIncludes(page, 'Collect field stamps across United States and worldwide habitats.');
     await assertCompassIncludes(page, '1/11 atlas stamps');
-    await assertCompassIncludes(page, 'Resume Start Journey');
+    await assertCompassIncludes(page, 'Work on This Mission');
+    await assertCompassIncludes(page, 'Return to Guided Path');
     await assertShellBadge(page, 'Field Atlas');
     await assertActivityAboveFold(page, 320, 'Global Map desktop');
     assert.equal(await page.title(), 'Global Map | Global Firefly Academy');
@@ -217,10 +219,10 @@ async function run() {
     assert.equal(await page.title(), 'Global Map | Global Firefly Academy');
     assert.equal(await storedCurrentStage(page), '5');
 
-    await page.getByRole('button', { name: /Resume Start Journey/ }).click();
+    await page.getByRole('button', { name: /Return to Guided Path/ }).click();
     await page.waitForTimeout(250);
     await assertCompassIncludes(page, 'Mission 1/14');
-    await assertCompassIncludes(page, 'Keep Working Here');
+    await assertCompassIncludes(page, 'Work on This Mission');
     await assertShellBadge(page, 'First Flash');
     assert.equal(await storedCurrentStage(page), '0');
 
@@ -237,6 +239,15 @@ async function run() {
       await page.locator('header button[aria-label^="First Flash:"]').getAttribute('aria-label'),
       'First Flash: earned'
     );
+
+    await openStage(page, 0);
+    await assertCompassIncludes(page, 'Badge earned');
+    await assertCompassIncludes(page, 'Continue to Family Tree');
+    await assertCompassIncludes(page, 'Review This Mission');
+    await page.getByRole('button', { name: /Continue to Family Tree/ }).click();
+    await page.waitForTimeout(250);
+    await assertCompassIncludes(page, 'Mission 2/14');
+    await assertCompassIncludes(page, 'Family Tree');
 
     await page.getByRole('button', { name: 'View Badge' }).click();
     await page.waitForTimeout(150);
@@ -284,9 +295,13 @@ async function run() {
     await assertCompassIncludes(stageEntry, 'Mission 6/14');
     await assertCompassIncludes(stageEntry, 'Global Map');
     await assertCompassIncludes(stageEntry, '1/11 atlas stamps');
+    await assertCompassIncludes(stageEntry, 'Work on This Mission');
+    await assertCompassIncludes(stageEntry, 'Return to Guided Path');
     assert.ok(stageEntry.url().endsWith('/global-map.html'), `direct stage entry should settle on the stage HTML URL. Actual URL: ${stageEntry.url()}`);
     await assertShellBadge(stageEntry, 'Field Atlas');
     await assertActivityAboveFold(stageEntry, 320, 'Global Map direct desktop');
+    await stageEntry.getByRole('button', { name: /Work on This Mission/ }).click();
+    await stageEntry.waitForFunction(() => window.scrollY > 80, null, { timeout: 60000 });
     assert.equal(await stageEntry.title(), 'Global Map | Global Firefly Academy');
     await stageEntry.close();
 
@@ -299,6 +314,8 @@ async function run() {
     await loadClean(surveyEntry, new URL('field-survey.html', url).toString());
     await assertCompassIncludes(surveyEntry, 'Mission 9/14');
     await assertCompassIncludes(surveyEntry, 'Field Survey');
+    await assertCompassIncludes(surveyEntry, 'Work on This Mission');
+    await assertCompassIncludes(surveyEntry, 'Return to Guided Path');
     await surveyEntry.getByRole('heading', { name: 'Field Survey Lab' }).waitFor({ timeout: 60000 });
     assert.ok(surveyEntry.url().endsWith('/field-survey.html'), `field survey should settle on its stage HTML URL. Actual URL: ${surveyEntry.url()}`);
     await assertShellBadge(surveyEntry, 'Canopy Researcher');
@@ -319,6 +336,8 @@ async function run() {
     await mobile.waitForTimeout(250);
     await assertCompassIncludes(mobile, 'Mission 6/14');
     await assertCompassIncludes(mobile, '1/11 atlas stamps');
+    await assertCompassIncludes(mobile, 'Work on This Mission');
+    await assertCompassIncludes(mobile, 'Return to Guided Path');
     assert.equal(await storedCurrentStage(mobile), '5');
     await assertShellBadge(mobile, 'Field Atlas');
     await assertActivityAboveFold(mobile, 120, 'Global Map mobile');
