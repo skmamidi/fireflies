@@ -4371,34 +4371,67 @@
       });
       const setTreeField = useNotebookField(setTreeNotebook);
       const { selectedTile, placements, activeNodeId } = treeNotebook;
-      const setSelectedTile = (tileId) => setTreeField('selectedTile', tileId);
+      const [treeFeedback, setTreeFeedback] = useState(null);
 
       const correctCount = treeNodes.filter(node => placements[node.id] === node.id).length;
       const isComplete = correctCount === treeNodes.length;
       const activeNode = treeNodes.find(node => node.id === activeNodeId) || treeNodes[0];
-
-      const handleNodeClick = (nodeId) => {
-        setTreeNotebook(prev => {
-          if (!prev.selectedTile) return { ...prev, activeNodeId: nodeId };
-          const next = { ...prev.placements };
-          Object.keys(next).forEach(key => {
-            if (next[key] === prev.selectedTile) delete next[key];
-          });
-          next[nodeId] = prev.selectedTile;
-          return { ...prev, activeNodeId: nodeId, placements: next, selectedTile: null };
-        });
-      };
-
-      const resetTree = () => {
-        treeNotebookMeta.reset();
-      };
-
       const getPlacedTile = (nodeId) => tiles.find(tile => tile.id === placements[nodeId]);
-      const usedTileIds = Object.values(placements);
+      const placedTileIds = Object.values(placements);
+      const completedTileIds = treeNodes.filter(node => placements[node.id] === node.id).map(node => node.id);
       const nodeById = treeNodes.reduce((lookup, node) => {
         lookup[node.id] = node;
         return lookup;
       }, {});
+      const remainingTiles = tiles.filter(tile => !completedTileIds.includes(tile.id));
+      const selectedCandidate = tiles.find(tile => tile.id === selectedTile && !completedTileIds.includes(tile.id));
+      const activeTile = selectedCandidate || remainingTiles[0] || null;
+      const activeTileNode = activeTile ? nodeById[activeTile.id] : null;
+      const activeTileIndex = activeTile ? tiles.findIndex(tile => tile.id === activeTile.id) + 1 : tiles.length;
+
+      const handleNodeClick = (nodeId) => {
+        setTreeNotebook(prev => {
+          const prevCompletedTileIds = treeNodes.filter(node => prev.placements[node.id] === node.id).map(node => node.id);
+          const currentTile = tiles.find(tile => tile.id === prev.selectedTile && !prevCompletedTileIds.includes(tile.id))
+            || tiles.find(tile => !prevCompletedTileIds.includes(tile.id));
+
+          if (!currentTile) {
+            setTreeFeedback(null);
+            return { ...prev, activeNodeId: nodeId, selectedTile: null };
+          }
+
+          if (nodeId !== currentTile.id) {
+            setTreeFeedback({ type: 'try', tileId: currentTile.id, nodeId });
+            return { ...prev, activeNodeId: nodeId, selectedTile: currentTile.id };
+          }
+
+          const next = { ...prev.placements };
+          Object.keys(next).forEach(key => {
+            if (next[key] === currentTile.id) delete next[key];
+          });
+          next[nodeId] = currentTile.id;
+          const nextCompletedTileIds = treeNodes.filter(node => next[node.id] === node.id).map(node => node.id);
+          const nextTile = tiles.find(tile => !nextCompletedTileIds.includes(tile.id));
+          setTreeFeedback({ type: 'correct', tileId: currentTile.id, nodeId });
+          return { ...prev, activeNodeId: nodeId, placements: next, selectedTile: nextTile?.id || null };
+        });
+      };
+
+      const resetTree = () => {
+        setTreeFeedback(null);
+        treeNotebookMeta.reset();
+      };
+
+      const chooseTile = (tileId) => {
+        const matchingNode = nodeById[tileId];
+        setTreeFeedback(null);
+        setTreeNotebook(prev => ({
+          ...prev,
+          activeNodeId: matchingNode?.id || prev.activeNodeId,
+          selectedTile: completedTileIds.includes(tileId) ? prev.selectedTile : tileId
+        }));
+      };
+
       const trailSegments = [
         ['animalia', 'arthropoda'],
         ['arthropoda', 'insecta'],
@@ -4411,23 +4444,22 @@
       ];
 
       useEffect(() => {
-        const selected = tiles.find(tile => tile.id === selectedTile);
         onProgress?.({
           value: correctCount,
           total: treeNodes.length,
           label: `${correctCount}/${treeNodes.length} branches matched`,
           nudge: isComplete
             ? 'Every branch is glowing correctly. Unlock the Glow Lab when you are ready.'
-            : selected
-              ? `Place ${selected.title} on the branch that matches its clue.`
-              : 'Choose a clue tile, then tap the matching branch on the tree.',
+            : activeTile
+              ? `Match the ${activeTile.title} clue to its branch on the tree.`
+              : 'Study the glowing trail, then unlock the Glow Lab.',
           steps: [
-            { label: 'Choose a clue tile', status: selectedTile || usedTileIds.length ? 'done' : 'active' },
-            { label: 'Place clues on the matching branches', status: isComplete ? 'done' : selectedTile || correctCount ? 'active' : 'locked' },
+            { label: 'Read the current clue', status: activeTile || correctCount ? 'done' : 'active' },
+            { label: 'Match clues to glowing branches', status: isComplete ? 'done' : activeTile || correctCount ? 'active' : 'locked' },
             { label: 'Unlock the glow lab when all branches are correct', status: isComplete ? 'active' : 'locked' }
           ]
         });
-      }, [correctCount, isComplete, selectedTile, usedTileIds.length, onProgress]);
+      }, [correctCount, isComplete, activeTile?.id, onProgress]);
 
       return (
         <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0">
@@ -4486,8 +4518,8 @@
             </div>
           </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-5 flex-1 min-h-0">
-            <div className="relative bg-slate-950 border-2 border-slate-800 rounded-3xl overflow-hidden min-h-[800px] shadow-[inset_0_0_80px_rgba(34,197,94,0.08)]">
+          <div className="grid grid-cols-1 gap-5 flex-1 min-h-0 lg:grid-cols-[minmax(0,1.08fr)_minmax(21rem,0.82fr)]">
+            <div className="order-2 relative min-h-[640px] overflow-hidden rounded-3xl border-2 border-slate-800 bg-slate-950 shadow-[inset_0_0_80px_rgba(34,197,94,0.08)] sm:min-h-[700px] lg:order-1 lg:min-h-[min(760px,78vh)] xl:min-h-[780px]">
               <div className="absolute inset-0 twinkle-bg opacity-50"></div>
               <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-green-950/70 via-teal-950/20 to-transparent"></div>
               <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none">
@@ -4510,14 +4542,15 @@
               {treeNodes.map(node => {
                 const placed = getPlacedTile(node.id);
                 const isCorrect = placements[node.id] === node.id;
-                const isWrong = placed && !isCorrect;
+                const isWrong = (placed && !isCorrect) || (treeFeedback?.type === 'try' && treeFeedback.nodeId === node.id);
+                const isFreshCorrect = treeFeedback?.type === 'correct' && treeFeedback.nodeId === node.id;
                 const isActive = activeNodeId === node.id;
                 return (
                   <button
                     key={node.id}
                     onClick={() => handleNodeClick(node.id)}
                     className={`absolute -translate-x-1/2 -translate-y-1/2 w-[138px] sm:w-[160px] rounded-2xl border-2 p-2.5 text-left transition-all duration-300 backdrop-blur-md group
-                      ${isCorrect ? 'bg-green-950/80 border-green-300 shadow-[0_0_26px_rgba(74,222,128,0.55)]' : isWrong ? 'bg-red-950/80 border-red-400 shadow-[0_0_20px_rgba(248,113,113,0.35)]' : isActive ? 'bg-slate-800/90 border-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.35)]' : 'bg-slate-900/90 border-slate-700 hover:border-yellow-400'}`}
+                      ${isCorrect ? `bg-green-950/80 border-green-300 shadow-[0_0_26px_rgba(74,222,128,0.55)] ${isFreshCorrect ? 'scale-[1.04]' : ''}` : isWrong ? 'bg-red-950/80 border-red-400 shadow-[0_0_20px_rgba(248,113,113,0.35)]' : isActive ? 'bg-slate-800/90 border-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.35)]' : 'bg-slate-900/90 border-slate-700 hover:border-cyan-300 hover:shadow-[0_0_18px_rgba(103,232,249,0.24)]'}`}
                     style={{ left: `${node.x}%`, top: `${node.y}%` }}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
@@ -4533,6 +4566,7 @@
                       {placed ? placed.subtitle : node.kidName}
                     </p>
                     {isCorrect && <CheckCircle size={18} className="absolute -top-2 -right-2 text-green-300 bg-slate-950 rounded-full" />}
+                    {isWrong && !isCorrect && <X size={17} className="absolute -top-2 -right-2 text-red-200 bg-slate-950 rounded-full" />}
                   </button>
                 );
               })}
@@ -4551,35 +4585,99 @@
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 min-h-0">
-              <div className="bg-slate-900 border border-slate-700 rounded-3xl p-4 sm:p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-black text-white flex items-center gap-2"><Dna size={20} className="text-green-300" /> Clue Tiles</h3>
+            <div className="order-1 flex flex-col gap-4 min-h-0 lg:order-2 lg:sticky lg:top-24 lg:self-start">
+              <div className="overflow-hidden rounded-3xl border border-slate-700 bg-slate-900">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3 sm:px-5">
+                  <h3 className="font-black text-white flex items-center gap-2"><Dna size={20} className="text-green-300" /> Clue Deck</h3>
                   <button onClick={resetTree} className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1"><RefreshCw size={13} /> Reset</button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+
+                <div className="p-4 sm:p-5">
+                  <div className="relative overflow-hidden rounded-3xl border-2 border-yellow-300/45 bg-slate-950/80 p-4 shadow-[0_0_28px_rgba(250,204,21,0.12)]">
+                    <div className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-yellow-300/20 blur-3xl"></div>
+                    {activeTile ? (
+                      <div className="relative">
+                        <div className="mb-3 flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="h-14 w-14 shrink-0 rounded-2xl border border-slate-700 bg-slate-900 p-2">
+                              <TaxonomySvg id={activeTile.visual} className="h-full w-full" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-yellow-100">Current Clue</p>
+                              <h4 className="break-words text-xl font-black leading-tight text-white">{activeTile.title}</h4>
+                              <p className="mt-1 text-xs font-bold text-slate-400">{activeTile.subtitle}</p>
+                            </div>
+                          </div>
+                          <span className="rounded-full border border-yellow-300/35 bg-yellow-300/10 px-3 py-1 text-xs font-black text-yellow-100">
+                            {activeTileIndex}/{tiles.length}
+                          </span>
+                        </div>
+                        <p className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3 text-sm font-semibold leading-relaxed text-slate-200">
+                          {activeTileNode?.clue}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="relative flex items-center gap-3">
+                        <div className="h-14 w-14 rounded-2xl border border-green-300/40 bg-green-300/10 p-3 text-green-200">
+                          <CheckCircle className="h-full w-full" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-green-100">Trail Complete</p>
+                          <h4 className="text-xl font-black text-white">Every branch is matched.</h4>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {treeFeedback && (
+                    <div className={`mt-3 rounded-2xl border p-3 ${treeFeedback.type === 'correct' ? 'border-green-300/35 bg-green-300/10' : 'border-red-300/35 bg-red-300/10'}`} role="status" aria-live="polite">
+                      <p className={`text-xs font-black uppercase tracking-wider ${treeFeedback.type === 'correct' ? 'text-green-100' : 'text-red-100'}`}>
+                        {treeFeedback.type === 'correct' ? 'Matched' : 'Try Again'}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-200">
+                        {treeFeedback.type === 'correct'
+                          ? `${nodeById[treeFeedback.nodeId]?.label || 'That branch'} is locked into the trail.`
+                          : `${nodeById[treeFeedback.nodeId]?.label || 'That branch'} is a different branch. Keep the clue and test another spot.`}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-4">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Trail Cards</p>
+                      <p className="text-xs font-black text-yellow-300">{correctCount}/{treeNodes.length}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2">
                   {tiles.map(tile => {
-                    const isSelected = selectedTile === tile.id;
-                    const isUsed = usedTileIds.includes(tile.id);
+                    const isSelected = activeTile?.id === tile.id;
+                    const isDone = completedTileIds.includes(tile.id);
+                    const isRetry = !isDone && placedTileIds.includes(tile.id);
                     return (
                       <button
                         key={tile.id}
-                        onClick={() => setSelectedTile(tile.id)}
-                        className={`p-3 rounded-2xl border-2 text-left transition-all ${isSelected ? 'bg-yellow-400 text-slate-950 border-white shadow-[0_0_18px_rgba(250,204,21,0.45)] scale-[1.02]' : isUsed ? 'bg-slate-950 border-green-800 text-slate-500' : 'bg-slate-800 border-slate-700 text-slate-200 hover:border-yellow-400'}`}
+                        onClick={() => chooseTile(tile.id)}
+                        className={`rounded-2xl border-2 p-2.5 text-left transition-all ${isSelected ? 'bg-yellow-400 text-slate-950 border-white shadow-[0_0_18px_rgba(250,204,21,0.45)] scale-[1.02]' : isDone ? 'bg-green-950/55 border-green-500/70 text-green-100' : isRetry ? 'bg-red-950/45 border-red-400/70 text-red-100' : 'bg-slate-800 border-slate-700 text-slate-200 hover:border-cyan-300'}`}
                       >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="flex min-w-0 items-center gap-2 font-black">
-                            <span className="h-8 w-8 rounded-xl bg-slate-950/70 border border-slate-700 p-1 shrink-0">
+                        <div className="flex items-center gap-2">
+                          <span className="h-8 w-8 rounded-xl bg-slate-950/70 border border-slate-700 p-1 shrink-0">
                               <TaxonomySvg id={tile.visual} className="h-full w-full" />
-                            </span>
-                            <span>{tile.title}</span>
                           </span>
-                          {isUsed && <CheckCircle size={16} className="text-green-400" />}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-black">{tile.title}</span>
+                            <span className={`mt-0.5 block truncate text-[11px] font-semibold ${isSelected ? 'text-slate-800' : isDone ? 'text-green-200/90' : isRetry ? 'text-red-200/90' : 'text-slate-400'}`}>
+                              {tile.subtitle}
+                            </span>
+                            <span className={`mt-0.5 block truncate text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-slate-800' : isDone ? 'text-green-200' : isRetry ? 'text-red-200' : 'text-slate-500'}`}>
+                              {isDone ? 'Matched' : isRetry ? 'Retry' : 'Open'}
+                            </span>
+                          </span>
+                          {isDone && <CheckCircle size={15} className="shrink-0 text-green-300" />}
                         </div>
-                        <p className={`text-xs mt-1 ${isSelected ? 'text-slate-800' : 'text-slate-400'}`}>{tile.subtitle}</p>
                       </button>
                     );
                   })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
