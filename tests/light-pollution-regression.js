@@ -108,6 +108,22 @@ async function assertCompassIncludes(page, expected) {
   );
 }
 
+async function assertActivityAboveFold(page, minVisiblePx, label) {
+  const metrics = await page.evaluate(() => {
+    const stage = document.querySelector('main > div.flex-1')?.getBoundingClientRect();
+    return {
+      stageTop: Math.round(stage?.top || 0),
+      visible: Math.round(window.innerHeight - (stage?.top || 0)),
+      viewportHeight: window.innerHeight
+    };
+  });
+
+  assert.ok(
+    metrics.visible >= minVisiblePx,
+    `${label} activity should appear in the first viewport. Expected at least ${minVisiblePx}px visible, got ${metrics.visible}px. Metrics: ${JSON.stringify(metrics)}`
+  );
+}
+
 async function run() {
   const server = createServer();
   const url = await listen(server);
@@ -131,6 +147,7 @@ async function run() {
     await openStage(page, 9);
 
     await page.getByRole('heading', { name: 'Dark-Sky Signal Lab' }).waitFor({ timeout: 60000 });
+    await assertActivityAboveFold(page, 320, 'Light Pollution desktop');
     await assertCompassIncludes(page, 'Mission 10/14');
     await assertCompassIncludes(page, 'Raise the light stressors');
     await assertCompassIncludes(page, '0% light stress');
@@ -184,6 +201,7 @@ async function run() {
     await loadClean(mobile, url);
     await openStage(mobile, 9);
     await mobile.getByRole('heading', { name: 'Dark-Sky Signal Lab' }).waitFor({ timeout: 60000 });
+    await assertActivityAboveFold(mobile, 120, 'Light Pollution mobile');
     await mobile.getByLabel('Urban skyglow intensity').waitFor();
     await mobile.getByRole('button', { name: /Switch Off Extras/ }).waitFor();
     await mobile.close();

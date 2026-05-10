@@ -109,6 +109,22 @@ async function assertShellBadge(page, expectedTitle) {
   assert.ok(text.toLowerCase().includes('current mission'), `Badge summary should mark the active stage. Actual text:\n${text}`);
 }
 
+async function assertActivityAboveFold(page, minVisiblePx, label) {
+  const metrics = await page.evaluate(() => {
+    const stage = document.querySelector('main > div.flex-1')?.getBoundingClientRect();
+    return {
+      stageTop: Math.round(stage?.top || 0),
+      visible: Math.round(window.innerHeight - (stage?.top || 0)),
+      viewportHeight: window.innerHeight
+    };
+  });
+
+  assert.ok(
+    metrics.visible >= minVisiblePx,
+    `${label} activity should appear in the first viewport. Expected at least ${minVisiblePx}px visible, got ${metrics.visible}px. Metrics: ${JSON.stringify(metrics)}`
+  );
+}
+
 async function run() {
   const server = createServer();
   const baseUrl = await listen(server);
@@ -135,6 +151,7 @@ async function run() {
     assert.ok(page.url().endsWith('/field-survey.html'), `field survey should stay on its dedicated stage page. Actual URL: ${page.url()}`);
     assert.equal(await page.title(), 'Field Survey | Global Firefly Academy');
     await assertShellBadge(page, 'Canopy Researcher');
+    await assertActivityAboveFold(page, 320, 'Field Survey desktop');
 
     await assertBodyIncludes(page, 'Signal Field Guide');
     await assertBodyIncludes(page, 'Practice the patterns before the count');
@@ -196,6 +213,7 @@ async function run() {
     await mobile.goto(new URL('field-survey.html', baseUrl).toString(), { waitUntil: 'networkidle', timeout: 60000 });
     await mobile.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
     await mobile.getByRole('heading', { name: 'Field Survey Lab' }).waitFor({ timeout: 60000 });
+    await assertActivityAboveFold(mobile, 120, 'Field Survey mobile');
     await mobile.getByRole('button', { name: /Start Field Survey/ }).tap();
     await mobile.getByText('Active Transect').waitFor();
     await assertBodyIncludes(mobile, 'Observation Log');

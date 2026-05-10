@@ -127,6 +127,24 @@ async function assertShellBadge(page, expectedTitle, expectedStatus = 'Current M
   );
 }
 
+async function assertActivityAboveFold(page, minVisiblePx, label) {
+  const metrics = await page.evaluate(() => {
+    const stage = document.querySelector('main > div.flex-1')?.getBoundingClientRect();
+    const compass = document.querySelector('section[aria-label="Field journal mission compass"]')?.getBoundingClientRect();
+    return {
+      stageTop: Math.round(stage?.top || 0),
+      visible: Math.round(window.innerHeight - (stage?.top || 0)),
+      compassHeight: Math.round(compass?.height || 0),
+      viewportHeight: window.innerHeight
+    };
+  });
+
+  assert.ok(
+    metrics.visible >= minVisiblePx,
+    `${label} activity should appear in the first viewport. Expected at least ${minVisiblePx}px visible, got ${metrics.visible}px. Metrics: ${JSON.stringify(metrics)}`
+  );
+}
+
 async function storedCurrentStage(page) {
   return page.evaluate(() => window.localStorage.getItem('firefly-academy-current-stage'));
 }
@@ -168,6 +186,12 @@ async function run() {
     await assertCompassIncludes(page, 'Start the expedition and set your first field note.');
     await assertCompassIncludes(page, 'Ready to launch');
     await assertShellBadge(page, 'First Flash');
+    await assertActivityAboveFold(page, 320, 'Start Journey desktop');
+    assert.equal(await page.locator('.quest-journal-details').count(), 0, 'mission journal should be compact by default');
+    await page.getByRole('button', { name: /Show Journal/ }).click();
+    await page.locator('.quest-journal-details').getByText('Read the expedition brief').waitFor({ timeout: 60000 });
+    await page.getByRole('button', { name: /Hide Journal/ }).click();
+    await page.waitForFunction(() => !document.querySelector('.quest-journal-details'), null, { timeout: 60000 });
     assert.equal(await page.title(), 'Start Journey | Global Firefly Academy');
     assert.equal(await page.locator('[data-stage-index="5"]').getAttribute('href'), './global-map.html');
     assert.equal(await storedCurrentStage(page), '0');
@@ -179,6 +203,7 @@ async function run() {
     await assertCompassIncludes(page, '1/11 atlas stamps');
     await assertCompassIncludes(page, 'Resume Start Journey');
     await assertShellBadge(page, 'Field Atlas');
+    await assertActivityAboveFold(page, 320, 'Global Map desktop');
     assert.equal(await page.title(), 'Global Map | Global Firefly Academy');
     assert.equal(await storedCurrentStage(page), '5');
     assert.ok(page.url().endsWith('/global-map.html'), `stage navigation should expose the stage HTML URL. Actual URL: ${page.url()}`);
@@ -261,6 +286,7 @@ async function run() {
     await assertCompassIncludes(stageEntry, '1/11 atlas stamps');
     assert.ok(stageEntry.url().endsWith('/global-map.html'), `direct stage entry should settle on the stage HTML URL. Actual URL: ${stageEntry.url()}`);
     await assertShellBadge(stageEntry, 'Field Atlas');
+    await assertActivityAboveFold(stageEntry, 320, 'Global Map direct desktop');
     assert.equal(await stageEntry.title(), 'Global Map | Global Firefly Academy');
     await stageEntry.close();
 
@@ -276,6 +302,7 @@ async function run() {
     await surveyEntry.getByRole('heading', { name: 'Field Survey Lab' }).waitFor({ timeout: 60000 });
     assert.ok(surveyEntry.url().endsWith('/field-survey.html'), `field survey should settle on its stage HTML URL. Actual URL: ${surveyEntry.url()}`);
     await assertShellBadge(surveyEntry, 'Canopy Researcher');
+    await assertActivityAboveFold(surveyEntry, 320, 'Field Survey direct desktop');
     assert.equal(await surveyEntry.title(), 'Field Survey | Global Firefly Academy');
     await surveyEntry.close();
 
@@ -294,6 +321,7 @@ async function run() {
     await assertCompassIncludes(mobile, '1/11 atlas stamps');
     assert.equal(await storedCurrentStage(mobile), '5');
     await assertShellBadge(mobile, 'Field Atlas');
+    await assertActivityAboveFold(mobile, 120, 'Global Map mobile');
     await mobile.evaluate(() => window.scrollTo(0, 420));
     await mobile.waitForFunction(() => {
       const element = document.querySelector('.badge-summary-panel');
