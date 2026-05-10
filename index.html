@@ -1201,6 +1201,7 @@
       totalBadges,
       nextStage,
       onResumeNext,
+      onWorkHere,
       onViewBadge
     }) {
       const missionSteps = mission?.steps || [stage.badge.how, 'Complete the section challenge', 'Claim the field badge'];
@@ -1218,9 +1219,13 @@
       const progressPercent = progressTotal ? Math.round((progressValue / progressTotal) * 100) : 0;
       const progressLabel = progress?.label || (isEarned ? 'Mission complete' : null);
       const guideNudge = progress?.nudge || mission?.nudge || 'Follow the current section challenge to unlock the badge.';
-      const showResume = nextStage && nextStage.id !== stage.id;
+      const canReturnToGuidedPath = nextStage && nextStage.id !== stage.id && !isEarned;
+      const canContinueToNext = nextStage && nextStage.id !== stage.id && isEarned;
       const [journalOpen, setJournalOpen] = useState(false);
       const activeStep = steps.find(step => step.status === 'active') || steps.find(step => step.status !== 'done') || steps[steps.length - 1];
+      const primaryAction = canContinueToNext
+        ? { label: `Continue to ${nextStage.title}`, onClick: onResumeNext, icon: <ArrowRight size={16} /> }
+        : { label: isEarned ? 'Review This Mission' : 'Work on This Mission', onClick: onWorkHere, icon: <Target size={16} /> };
 
       useEffect(() => {
         setJournalOpen(false);
@@ -1277,7 +1282,7 @@
               </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-3 lg:w-52 lg:grid-cols-1">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:w-52 lg:grid-cols-1">
               <button
                 type="button"
                 onClick={onViewBadge}
@@ -1293,16 +1298,33 @@
               >
                 {journalOpen ? 'Hide Journal' : 'Show Journal'} {journalOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
-              {nextStage ? (
+              <button
+                type="button"
+                onClick={primaryAction.onClick}
+                className="col-span-2 inline-flex min-h-[2.5rem] items-center justify-center gap-2 rounded-full bg-yellow-300 px-4 py-2 text-sm font-black text-slate-950 shadow-[0_0_18px_rgba(250,204,21,0.28)] transition-all hover:bg-yellow-200 active:scale-95 sm:col-span-1"
+              >
+                {primaryAction.label} {primaryAction.icon}
+              </button>
+              {canReturnToGuidedPath && (
                 <button
                   type="button"
                   onClick={onResumeNext}
-                  className="inline-flex min-h-[2.5rem] items-center justify-center gap-2 rounded-full bg-yellow-300 px-4 py-2 text-sm font-black text-slate-950 shadow-[0_0_18px_rgba(250,204,21,0.28)] transition-all hover:bg-yellow-200 active:scale-95 sm:col-span-1"
+                  className="col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-yellow-300/30 bg-yellow-300/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-yellow-100 transition-all hover:border-yellow-300/60 hover:bg-yellow-300/15 active:scale-95 sm:col-span-3 lg:col-span-1"
                 >
-                  {showResume ? `Resume ${nextStage.title}` : 'Keep Working Here'} <ArrowRight size={16} />
+                  Return to Guided Path <ArrowRight size={14} />
                 </button>
-              ) : (
-                <div className="inline-flex min-h-[2.5rem] items-center justify-center gap-2 rounded-full border border-green-300/40 bg-green-300/10 px-4 py-2 text-sm font-black text-green-100">
+              )}
+              {isEarned && nextStage && (
+                <button
+                  type="button"
+                  onClick={onWorkHere}
+                  className="col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-950/60 px-4 py-1.5 text-sm font-black text-slate-200 transition-all hover:border-cyan-300/50 hover:bg-slate-800 active:scale-95 sm:col-span-3 lg:col-span-1"
+                >
+                  Review This Mission <Target size={15} />
+                </button>
+              )}
+              {!nextStage && isEarned && (
+                <div className="col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-green-300/40 bg-green-300/10 px-4 py-1.5 text-sm font-black text-green-100 sm:col-span-3 lg:col-span-1">
                   Academy complete <CheckCircle size={16} />
                 </div>
               )}
@@ -1380,6 +1402,7 @@
       const [stageProgress, setStageProgress] = useState({});
       const [shellScrolled, setShellScrolled] = useState(false);
       const stageNavRef = useRef(null);
+      const stageContentRef = useRef(null);
       const celebrationTimerRef = useRef(null);
       const fieldStampTimerRef = useRef(null);
       const rippleTimersRef = useRef([]);
@@ -1436,6 +1459,12 @@
       };
       const resumeNextMission = () => {
         if (nextUnfinishedIndex >= 0) openStage(nextUnfinishedIndex);
+      };
+      const workOnCurrentMission = () => {
+        const content = stageContentRef.current;
+        if (!content) return;
+        content.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.setTimeout(() => content.focus?.({ preventScroll: true }), 260);
       };
       const advanceStage = () => setCurrentStage(prev => Math.min(prev + 1, stages.length - 1));
       const unlockBadge = (stageId) => {
@@ -1687,11 +1716,12 @@
               totalBadges={stages.length}
               nextStage={nextUnfinishedStage}
               onResumeNext={resumeNextMission}
+              onWorkHere={workOnCurrentMission}
               onViewBadge={() => setActiveBadgeId(currentStageMeta.id)}
             />
 
             {/* Stage Renderer */}
-            <div className="flex-1 flex flex-col relative min-h-0">
+            <div ref={stageContentRef} tabIndex="-1" className="flex-1 flex flex-col relative min-h-0 focus:outline-none">
               {currentStage === 0 && <StageIntro onComplete={() => completeStage('intro')} onProgress={(progress) => reportStageProgress('intro', progress)} />}
               {currentStage === 1 && <StageFamilyTree onComplete={() => completeStage('familytree')} onProgress={(progress) => reportStageProgress('familytree', progress)} />}
               {currentStage === 2 && <StageScience onComplete={() => completeStage('science')} onProgress={(progress) => reportStageProgress('science', progress)} />}
