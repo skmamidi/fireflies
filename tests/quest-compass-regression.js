@@ -239,6 +239,29 @@ async function run() {
       await page.locator('header button[aria-label^="First Flash:"]').getAttribute('aria-label'),
       'First Flash: earned'
     );
+    await page.locator('button').filter({ hasText: 'Not a plant' }).first().click();
+    await page.locator('button').filter({ hasText: 'Animalia' }).first().click();
+    await page.waitForTimeout(250);
+    await assertCompassIncludes(page, '1/6 branches matched');
+    await assertCompassIncludes(page, 'Saved to Notebook');
+    assert.equal(
+      await page.evaluate(() => JSON.parse(window.localStorage.getItem('firefly-academy-notebook-familytree') || '{}')?.placements?.animalia),
+      'animalia'
+    );
+    await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
+    await page.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
+    await assertCompassIncludes(page, 'Mission 2/14');
+    await assertCompassIncludes(page, '1/6 branches matched');
+    await assertCompassIncludes(page, 'Restored from Notebook');
+    await page.getByRole('button', { name: /Reset/ }).click();
+    await page.waitForTimeout(250);
+    await assertCompassIncludes(page, '0/6 branches matched');
+    assert.equal(await page.evaluate(() => window.localStorage.getItem('firefly-academy-notebook-familytree')), null);
+    await page.evaluate(() => window.localStorage.setItem('firefly-academy-notebook-familytree', 'not-json'));
+    await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
+    await page.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
+    await assertCompassIncludes(page, '0/6 branches matched');
+    assert.ok(!(await compassText(page)).includes('Restored from Notebook'), 'corrupt notebook data should fall back without showing restored status');
 
     await openStage(page, 0);
     await assertCompassIncludes(page, 'Badge earned');
