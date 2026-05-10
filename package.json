@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "test:badges": "node tests/badge-wiring-regression.js",
+    "test:quest-compass": "node tests/quest-compass-regression.js",
+    "test": "npm run test:badges && npm run test:quest-compass"
+  }
+}
