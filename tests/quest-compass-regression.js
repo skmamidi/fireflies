@@ -127,6 +127,17 @@ async function assertShellBadge(page, expectedTitle, expectedStatus = 'Current M
   );
 }
 
+async function openPassport(page) {
+  await page.getByRole('button', { name: /Open field notebook passport/ }).click();
+  const passport = page.getByRole('dialog', { name: /Field notebook passport/ });
+  await passport.waitFor({ timeout: 60000 });
+  return passport;
+}
+
+async function passportStageText(passport, stageId) {
+  return passport.locator(`[data-passport-stage-id="${stageId}"]`).innerText();
+}
+
 async function assertActivityAboveFold(page, minVisiblePx, label) {
   const metrics = await page.evaluate(() => {
     const stage = document.querySelector('main > div.flex-1')?.getBoundingClientRect();
@@ -197,7 +208,14 @@ async function run() {
     assert.equal(await page.locator('[data-stage-index="5"]').getAttribute('href'), './global-map.html');
     assert.equal(await storedCurrentStage(page), '0');
 
-    await openStage(page, 5);
+    let passport = await openPassport(page);
+    await passport.getByText('Mission Passport').waitFor({ timeout: 60000 });
+    const introPassportText = await passportStageText(passport, 'intro');
+    assert.ok(introPassportText.toLowerCase().includes('current'), `passport should mark the open mission as current. Actual text:\n${introPassportText}`);
+    const familyReadyText = await passportStageText(passport, 'familytree');
+    assert.ok(familyReadyText.toLowerCase().includes('ready'), `passport should show upcoming missions in the log. Actual text:\n${familyReadyText}`);
+    await passport.locator('[data-passport-stage-id="map"]').getByRole('button', { name: /Open Global Map/ }).click();
+    await page.waitForTimeout(250);
     await assertCompassIncludes(page, 'Mission 6/14');
     await assertCompassIncludes(page, 'Global Map');
     await assertCompassIncludes(page, 'Collect field stamps across United States and worldwide habitats.');
@@ -253,6 +271,11 @@ async function run() {
     await assertCompassIncludes(page, 'Mission 2/14');
     await assertCompassIncludes(page, '1/6 branches matched');
     await assertCompassIncludes(page, 'Restored from Notebook');
+    passport = await openPassport(page);
+    const familyNotebookText = await passportStageText(passport, 'familytree');
+    assert.ok(familyNotebookText.toLowerCase().includes('saved'), `passport should mark saved family tree progress. Actual text:\n${familyNotebookText}`);
+    assert.ok(familyNotebookText.toLowerCase().includes('notebook'), `passport should show the notebook chip for saved missions. Actual text:\n${familyNotebookText}`);
+    await passport.getByRole('button', { name: /Close passport/ }).click();
     await page.getByRole('button', { name: /Reset/ }).click();
     await page.waitForTimeout(250);
     await assertCompassIncludes(page, '0/6 branches matched');
@@ -364,6 +387,10 @@ async function run() {
     assert.equal(await storedCurrentStage(mobile), '5');
     await assertShellBadge(mobile, 'Field Atlas');
     await assertActivityAboveFold(mobile, 120, 'Global Map mobile');
+    const mobilePassport = await openPassport(mobile);
+    await mobilePassport.getByText('Mission Passport').waitFor({ timeout: 60000 });
+    assert.ok((await passportStageText(mobilePassport, 'map')).toLowerCase().includes('current'), 'mobile passport should open and mark the current mission');
+    await mobilePassport.getByRole('button', { name: /Close passport/ }).click();
     await mobile.evaluate(() => window.scrollTo(0, 420));
     await mobile.waitForFunction(() => {
       const element = document.querySelector('.badge-summary-panel');
