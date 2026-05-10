@@ -1,11 +1,16 @@
 {
   "scripts": {
+    "dev": "python3 -m http.server 8767 --bind 127.0.0.1",
+    "format": "prettier --write \"**/*.{html,css,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{html,css,js,json,md}\"",
     "test:badges": "node tests/badge-wiring-regression.js",
     "test:quest-compass": "node tests/quest-compass-regression.js",
     "test:glow-hall": "node tests/glow-hall-regression.js",
     "test:light-pollution": "node tests/light-pollution-regression.js",
     "test:field-survey": "node tests/field-survey-regression.js",
     "test:certificate": "node tests/certificate-regression.js",
-    "test": "npm run test:badges && npm run test:quest-compass && npm run test:glow-hall && npm run test:light-pollution && npm run test:field-survey && npm run test:certificate"
+    "test": "npm run test:badges && npm run test:quest-compass && npm run test:glow-hall && npm run test:light-pollution && npm run test:field-survey && npm run test:certificate",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   }
 }
