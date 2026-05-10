@@ -1112,6 +1112,65 @@
       }
     };
 
+    const MISSION_DEBRIEFS = {
+      intro: {
+        proved: 'You opened the expedition journal and started the global research path.',
+        takeaway: 'Good field science begins with a clear question, a notebook, and careful observation.'
+      },
+      familytree: {
+        proved: 'You placed the taxonomy trail from Animalia through Lampyridae.',
+        takeaway: 'Fireflies are beetles in the family Lampyridae, not flies.'
+      },
+      science: {
+        proved: 'You identified the three ingredients that make a firefly lantern work.',
+        takeaway: 'Luciferin, luciferase, oxygen, and cellular energy create cold light with almost no heat.'
+      },
+      glowhall: {
+        proved: 'You sorted glowing organisms by the survival job their light performs.',
+        takeaway: 'Bioluminescence can signal mates, lure prey, warn predators, or help spread spores.'
+      },
+      species: {
+        proved: 'You studied every signature species card in the field index.',
+        takeaway: 'Flash rhythm, color, timing, and habitat can separate one firefly species from another.'
+      },
+      map: {
+        proved: 'You filled the field atlas with habitat stamps from both map regions.',
+        takeaway: 'Firefly displays depend on place: forests, swamps, rivers, deserts, and dark viewing windows.'
+      },
+      tamagotchi: {
+        proved: 'You guided the life cycle from egg through larva, pupa, and adult.',
+        takeaway: 'Most of a firefly life is spent close to the ground as eggs, larvae, and pupae.'
+      },
+      buildabug: {
+        proved: 'You built a trait mix that can fit a specific habitat niche.',
+        takeaway: 'Natural selection favors traits that solve real pressures: mating, survival, energy, and larval habitat.'
+      },
+      researcher: {
+        proved: 'You submitted a clean target-species count from a signal transect.',
+        takeaway: 'Citizen-science data is most useful when observers match the target pattern and avoid false positives.'
+      },
+      pollution: {
+        proved: 'You created a light-pollution crisis and restored the meadow to safe darkness.',
+        takeaway: 'Artificial light can erase flash messages even when it never touches a firefly directly.'
+      },
+      ecosystem: {
+        proved: 'You connected fireflies to food webs, habitat signals, and rescue actions.',
+        takeaway: 'Fireflies are tiny predators, prey, and habitat indicators inside a larger night ecosystem.'
+      },
+      sanctuary: {
+        proved: 'You designed a yard healthy enough to support a firefly sanctuary.',
+        takeaway: 'Leaf litter, native plants, moisture, and darker nights protect the next generation.'
+      },
+      trivia: {
+        proved: 'You answered enough firefly facts to earn the trivia spark.',
+        takeaway: 'Firefly science spans chemistry, anatomy, geography, behavior, and conservation.'
+      },
+      conservation: {
+        proved: 'You passed the ranger test and took the final conservation pledge.',
+        takeaway: 'The strongest firefly protection plan starts with habitat, dark skies, and gentle observation.'
+      }
+    };
+
     const STAGE_ROUTES = [
       { id: 'intro', file: 'start-journey.html', slug: 'start-journey' },
       { id: 'familytree', file: 'family-tree.html', slug: 'family-tree' },
@@ -1666,6 +1725,110 @@
       );
     }
 
+    function MissionDebriefDialog({
+      debrief,
+      stages,
+      savedStageIds,
+      onContinue,
+      onReview,
+      onOpenPassport,
+      onClose
+    }) {
+      const stage = debrief ? stages.find(item => item.id === debrief.stageId) : null;
+      const stageIndex = stage ? stages.findIndex(item => item.id === stage.id) : -1;
+      const nextStage = stageIndex >= 0 ? stages[stageIndex + 1] : null;
+      const copy = stage ? MISSION_DEBRIEFS[stage.id] || {} : {};
+      const savedAttempt = stage ? savedStageIds.includes(stage.id) : false;
+
+      useEffect(() => {
+        if (!stage) return undefined;
+        const handleKeyDown = (event) => {
+          if (event.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [stage, onClose]);
+
+      if (!stage) return null;
+
+      return (
+        <div className="fixed inset-0 z-[100]" aria-live="polite">
+          <div className="absolute inset-0 bg-slate-950/74 backdrop-blur-sm"></div>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${stage.badge.name} field report`}
+            className="absolute left-1/2 top-1/2 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border border-yellow-300/30 bg-slate-950 shadow-[0_0_60px_rgba(250,204,21,0.18)]"
+          >
+            <div className="relative overflow-hidden p-5 sm:p-6">
+              <div className="absolute inset-0 twinkle-bg opacity-35"></div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute right-4 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-slate-200 transition-all hover:border-yellow-300 hover:text-yellow-100 active:scale-95"
+                aria-label="Close field report"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="relative z-10 flex flex-col gap-5">
+                <div className="flex items-start gap-4 pr-10">
+                  <BadgeIcon stage={stage} earned className="h-16 w-16 shrink-0 drop-shadow-[0_0_20px_rgba(250,204,21,0.35)]" />
+                  <div className="min-w-0">
+                    <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-green-300 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-950">
+                      <CheckCircle size={13} /> Badge Earned
+                    </div>
+                    <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">{stage.badge.name}</h2>
+                    <p className="mt-1 text-sm font-bold text-yellow-200">{stage.title} field report</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900/75 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">What you proved</p>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-200">{copy.proved || stage.badge.how}</p>
+                  </div>
+                  <div className="rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-yellow-100">Science takeaway</p>
+                    <p className="mt-2 text-sm font-semibold leading-relaxed text-yellow-50">{copy.takeaway || QUEST_MISSIONS[stage.id]?.brief || stage.badge.how}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-cyan-100">Notebook status</p>
+                    <p className="mt-1 text-sm font-bold text-cyan-50">
+                      {savedAttempt ? 'Badge and saved attempt are logged in your passport.' : 'Badge and field report are logged in your passport.'}
+                    </p>
+                  </div>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-cyan-300/35 bg-slate-950/60 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-cyan-100">
+                    <FileText size={13} /> Saved
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => onReview(stageIndex)}
+                    className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-5 py-2.5 text-sm font-black text-slate-100 transition-all hover:border-cyan-300/60 hover:bg-slate-800 active:scale-95"
+                  >
+                    Review This Mission <Target size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => nextStage ? onContinue(stageIndex + 1) : onOpenPassport()}
+                    className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-[0_0_20px_rgba(250,204,21,0.28)] transition-all hover:bg-yellow-200 active:scale-95"
+                  >
+                    {nextStage ? `Continue to ${nextStage.title}` : 'Review Academy Passport'} <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      );
+    }
+
     function App() {
       const [currentStage, setCurrentStage] = useState(readStoredCurrentStage);
       const [earnedBadgeIds, setEarnedBadgeIds] = useState(() => {
@@ -1683,6 +1846,7 @@
       const [stageProgress, setStageProgress] = useState({});
       const [notebookStatus, setNotebookStatus] = useState(null);
       const [notebookDrawerOpen, setNotebookDrawerOpen] = useState(false);
+      const [missionDebrief, setMissionDebrief] = useState(null);
       const [shellScrolled, setShellScrolled] = useState(false);
       const stageNavRef = useRef(null);
       const stageContentRef = useRef(null);
@@ -1758,6 +1922,19 @@
         window.setTimeout(() => content.focus?.({ preventScroll: true }), 260);
       };
       const closeNotebookDrawer = useCallback(() => setNotebookDrawerOpen(false), []);
+      const closeMissionDebrief = useCallback(() => setMissionDebrief(null), []);
+      const continueFromDebrief = (stageIndex) => {
+        setMissionDebrief(null);
+        openStage(stageIndex);
+      };
+      const reviewFromDebrief = (stageIndex) => {
+        setMissionDebrief(null);
+        openStage(stageIndex);
+      };
+      const openPassportFromDebrief = () => {
+        setMissionDebrief(null);
+        setNotebookDrawerOpen(true);
+      };
       const advanceStage = () => setCurrentStage(prev => Math.min(prev + 1, stages.length - 1));
       const unlockBadge = (stageId) => {
         setEarnedBadgeIds(prev => prev.includes(stageId) ? prev : [...prev, stageId]);
@@ -1767,8 +1944,10 @@
         unlockBadge(stageId);
         setActiveBadgeId(stageId);
         if (!alreadyEarned) {
+          const token = Date.now();
           window.clearTimeout(celebrationTimerRef.current);
-          setBadgeCelebration({ stageId, token: Date.now() });
+          setBadgeCelebration({ stageId, token });
+          setMissionDebrief({ stageId, token });
           celebrationTimerRef.current = window.setTimeout(() => setBadgeCelebration(null), 2450);
         }
         window.clearTimeout(fieldStampTimerRef.current);
@@ -1893,6 +2072,15 @@
           <TapRippleLayer ripples={tapRipples} />
           <BadgeCelebration stage={celebrationStage} token={badgeCelebration?.token} />
           <FieldNotebookStamp stage={fieldStampStage} token={fieldStamp?.token} />
+          <MissionDebriefDialog
+            debrief={missionDebrief}
+            stages={stages}
+            savedStageIds={savedStageIds}
+            onContinue={continueFromDebrief}
+            onReview={reviewFromDebrief}
+            onOpenPassport={openPassportFromDebrief}
+            onClose={closeMissionDebrief}
+          />
           <FieldPassportDrawer
             open={notebookDrawerOpen}
             stages={stages}
