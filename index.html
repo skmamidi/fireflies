@@ -37,7 +37,7 @@
       Bug, Map as MapIcon, ShieldCheck, Award, Zap, LightbulbOff, 
       MapPin, CheckCircle, AlertTriangle, ArrowRight, Target, Leaf, Globe, HeartHandshake, HelpCircle, RefreshCw, Flame,
       Fish, Waves, Trees, Sprout, Snail, Scissors, Dna, Palette, Clock, Mountain,
-      Search, FileText, Building, Car, Flashlight, ChevronDown, ChevronUp
+      Search, FileText, Building, Car, Flashlight, ChevronDown, ChevronUp, X
     } from 'lucide-react';
 
     // Custom CSS for scientifically accurate(ish) firefly flashing animations
@@ -1370,6 +1370,17 @@
     }
 
     const NOTEBOOK_KEY_PREFIX = 'firefly-academy-notebook-';
+    const MISSION_NOTEBOOK_KEYS = {
+      familytree: ['familytree'],
+      science: ['science'],
+      glowhall: ['glowhall'],
+      species: ['firefly-academy-session-species-studied'],
+      map: ['firefly-academy-session-map-stamps'],
+      buildabug: ['buildabug'],
+      pollution: ['pollution'],
+      ecosystem: ['firefly-academy-session-ecosystem-tabs'],
+      sanctuary: ['sanctuary']
+    };
     const notebookStorageKey = (key) => key.startsWith('firefly-academy-') ? key : `${NOTEBOOK_KEY_PREFIX}${key}`;
 
     const cloneNotebookValue = (value) => {
@@ -1437,6 +1448,24 @@
       removeStorageSafely('sessionStorage', storageKey);
     };
 
+    const hasStoredNotebookEntry = (key) => {
+      const storageKey = notebookStorageKey(key);
+      for (const storageName of ['localStorage', 'sessionStorage']) {
+        const stored = readStorageSafely(storageName, storageKey);
+        if (!stored) continue;
+        try {
+          JSON.parse(stored);
+          return true;
+        } catch {}
+      }
+      return false;
+    };
+
+    const hasSavedNotebookForStage = (stageId) => {
+      const keys = MISSION_NOTEBOOK_KEYS[stageId] || [];
+      return keys.some(hasStoredNotebookEntry);
+    };
+
     const isPlainNotebookObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
     const useMissionState = (key, fallback, options = {}) => {
@@ -1500,6 +1529,143 @@
       return requiredKeys.every(key => Object.prototype.hasOwnProperty.call(value, key)) && extraCheck(value);
     };
 
+    function FieldPassportDrawer({
+      open,
+      stages,
+      currentStage,
+      earnedBadgeIds,
+      stageProgress,
+      savedStageIds,
+      nextStage,
+      onOpenStage,
+      onClose
+    }) {
+      const earnedCount = earnedBadgeIds.filter(id => stages.some(stage => stage.id === id)).length;
+      const savedCount = savedStageIds.length;
+      const currentStageMeta = stages[currentStage] || stages[0];
+
+      useEffect(() => {
+        if (!open) return undefined;
+        const handleKeyDown = (event) => {
+          if (event.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [open, onClose]);
+
+      if (!open) return null;
+
+      return (
+        <div className="fixed inset-0 z-[90]" aria-live="polite">
+          <button
+            type="button"
+            aria-label="Close field notebook passport"
+            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+            onClick={onClose}
+          ></button>
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Field notebook passport"
+            className="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col border-l border-yellow-300/20 bg-slate-950/96 shadow-[0_0_50px_rgba(250,204,21,0.12)]"
+          >
+            <div className="relative overflow-hidden border-b border-slate-800 p-4 sm:p-5">
+              <div className="absolute inset-0 twinkle-bg opacity-35"></div>
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-yellow-300/30 bg-yellow-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-yellow-100">
+                    <FileText size={13} /> Field Notebook
+                  </div>
+                  <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">Mission Passport</h2>
+                  <p className="mt-1 text-sm font-semibold text-slate-300">{currentStageMeta.title} is open in the lab.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 transition-all hover:border-yellow-300 hover:text-yellow-100 active:scale-95"
+                  aria-label="Close passport"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="relative mt-4 grid grid-cols-3 gap-2">
+                {[
+                  ['Badges', `${earnedCount}/${stages.length}`],
+                  ['Saved Notes', savedCount],
+                  ['Current', currentStageMeta.title]
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-2xl border border-slate-800 bg-slate-900/75 px-3 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">{label}</p>
+                    <p className="mt-1 truncate text-base font-black text-yellow-200">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
+              <div className="grid gap-2">
+                {stages.map((stage, index) => {
+                  const earned = earnedBadgeIds.includes(stage.id);
+                  const saved = savedStageIds.includes(stage.id);
+                  const current = index === currentStage;
+                  const next = nextStage?.id === stage.id;
+                  const progress = stageProgress[stage.id];
+                  const statusLabel = earned ? 'Earned' : current ? 'Current' : saved ? 'Saved' : next ? 'Next' : 'Ready';
+                  const statusClass = earned
+                    ? 'bg-green-300 text-slate-950'
+                    : current
+                      ? 'bg-yellow-300 text-slate-950'
+                      : saved
+                        ? 'border border-cyan-300/35 bg-cyan-300/10 text-cyan-100'
+                        : next
+                          ? 'border border-yellow-300/35 bg-yellow-300/10 text-yellow-100'
+                          : 'border border-slate-700 bg-slate-900 text-slate-400';
+
+                  return (
+                    <div
+                      key={stage.id}
+                      data-passport-stage-id={stage.id}
+                      className={`group relative overflow-hidden rounded-2xl border p-3 transition-all ${current ? 'border-yellow-300/55 bg-yellow-300/10' : earned ? 'border-green-300/35 bg-green-950/20' : saved ? 'border-cyan-300/30 bg-cyan-950/15' : 'border-slate-800 bg-slate-900/65 hover:border-slate-600'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${earned ? 'border-green-300/60 bg-green-300 text-slate-950' : current ? 'border-yellow-300 bg-slate-950 text-yellow-200' : saved ? 'border-cyan-300/45 bg-slate-950 text-cyan-200' : 'border-slate-700 bg-slate-950 text-slate-400'}`}>
+                          {earned ? <CheckCircle size={20} /> : stage.icon}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="truncate text-sm font-black text-white sm:text-base">{stage.title}</h3>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${statusClass}`}>{statusLabel}</span>
+                            {saved && (
+                              <span className="rounded-full border border-cyan-300/25 bg-slate-950/60 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-cyan-100">Saved Notebook</span>
+                            )}
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs font-semibold leading-relaxed text-slate-400">
+                            {progress?.label || stage.badge.how}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onOpenStage(index);
+                            onClose();
+                          }}
+                          className={`inline-flex min-h-[2.35rem] shrink-0 items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-black transition-all active:scale-95 ${current ? 'bg-yellow-300 text-slate-950' : 'border border-slate-700 bg-slate-950 text-slate-200 hover:border-yellow-300/70'}`}
+                          aria-label={`${current ? 'Return to' : 'Open'} ${stage.title}`}
+                        >
+                          {current ? 'Return' : 'Open'} <ArrowRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
+        </div>
+      );
+    }
+
     function App() {
       const [currentStage, setCurrentStage] = useState(readStoredCurrentStage);
       const [earnedBadgeIds, setEarnedBadgeIds] = useState(() => {
@@ -1516,6 +1682,7 @@
       const [tapRipples, setTapRipples] = useState([]);
       const [stageProgress, setStageProgress] = useState({});
       const [notebookStatus, setNotebookStatus] = useState(null);
+      const [notebookDrawerOpen, setNotebookDrawerOpen] = useState(false);
       const [shellScrolled, setShellScrolled] = useState(false);
       const stageNavRef = useRef(null);
       const stageContentRef = useRef(null);
@@ -1556,6 +1723,7 @@
       const currentStageProgress = stageProgress[currentStageMeta.id] || null;
       const nextUnfinishedIndex = stages.findIndex(stage => !isBadgeEarned(stage.id));
       const nextUnfinishedStage = nextUnfinishedIndex >= 0 ? stages[nextUnfinishedIndex] : null;
+      const savedStageIds = stages.filter(stage => hasSavedNotebookForStage(stage.id)).map(stage => stage.id);
       const reportStageProgress = useCallback((stageId, progress) => {
         setStageProgress(prev => {
           if (!progress) {
@@ -1589,6 +1757,7 @@
         content.scrollIntoView({ behavior: 'smooth', block: 'start' });
         window.setTimeout(() => content.focus?.({ preventScroll: true }), 260);
       };
+      const closeNotebookDrawer = useCallback(() => setNotebookDrawerOpen(false), []);
       const advanceStage = () => setCurrentStage(prev => Math.min(prev + 1, stages.length - 1));
       const unlockBadge = (stageId) => {
         setEarnedBadgeIds(prev => prev.includes(stageId) ? prev : [...prev, stageId]);
@@ -1724,6 +1893,17 @@
           <TapRippleLayer ripples={tapRipples} />
           <BadgeCelebration stage={celebrationStage} token={badgeCelebration?.token} />
           <FieldNotebookStamp stage={fieldStampStage} token={fieldStamp?.token} />
+          <FieldPassportDrawer
+            open={notebookDrawerOpen}
+            stages={stages}
+            currentStage={currentStage}
+            earnedBadgeIds={earnedBadgeIds}
+            stageProgress={stageProgress}
+            savedStageIds={savedStageIds}
+            nextStage={nextUnfinishedStage}
+            onOpenStage={openStage}
+            onClose={closeNotebookDrawer}
+          />
           
           <header className={`academy-header ${shellScrolled ? 'is-scrolled' : ''} p-2 sm:p-3 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 shadow-lg`}>
             <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
@@ -1736,24 +1916,37 @@
                 </h1>
               </div>
               
-              <div className="flex max-w-full items-center gap-1.5 sm:gap-2 bg-slate-800/50 p-1.5 rounded-full px-2 sm:p-2 sm:px-3 border border-slate-700/50 overflow-x-auto custom-scrollbar">
-                <span className="text-xs sm:text-sm font-bold text-slate-300 mr-1 uppercase tracking-wider shrink-0">Badges {earnedCount}/{stages.length}</span>
-                {stages.map(stage => {
-                  const earned = isBadgeEarned(stage.id);
-                  const isSelected = activeBadgeId === stage.id;
-                  return (
-                    <button
-                      key={stage.id}
-                      onClick={() => setActiveBadgeId(stage.id)}
-                      aria-label={`${stage.badge.name}: ${earned ? 'earned' : 'locked'}`}
-                      aria-pressed={isSelected}
-                      title={`${stage.badge.name} - ${earned ? 'earned' : 'locked'}`}
-                      className={`relative h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 ${earned ? 'shadow-[0_0_14px_rgba(250,204,21,0.45)] hover:scale-110' : 'opacity-70 hover:opacity-100'} ${isSelected ? 'scale-110 ring-2 ring-yellow-300' : ''}`}
-                    >
-                      <BadgeIcon stage={stage} earned={earned} className="h-full w-full" />
-                    </button>
-                  );
-                })}
+              <div className="flex max-w-full min-w-0 items-center gap-1.5 sm:gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNotebookDrawerOpen(true)}
+                  aria-expanded={notebookDrawerOpen}
+                  aria-label="Open field notebook passport"
+                  className="inline-flex min-h-[2.5rem] shrink-0 items-center justify-center gap-2 rounded-full border border-yellow-300/30 bg-yellow-300/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-yellow-100 transition-all hover:border-yellow-300/60 hover:bg-yellow-300/15 active:scale-95 sm:px-4"
+                >
+                  <FileText size={16} />
+                  <span className="hidden xl:inline">Notebook</span>
+                  <span className="rounded-full bg-slate-950/80 px-2 py-0.5 text-yellow-200">{savedStageIds.length}</span>
+                </button>
+                <div className="flex max-w-full items-center gap-1.5 overflow-x-auto rounded-full border border-slate-700/50 bg-slate-800/50 p-1.5 px-2 sm:gap-2 sm:p-2 sm:px-3 custom-scrollbar">
+                  <span className="text-xs sm:text-sm font-bold text-slate-300 mr-1 uppercase tracking-wider shrink-0">Badges {earnedCount}/{stages.length}</span>
+                  {stages.map(stage => {
+                    const earned = isBadgeEarned(stage.id);
+                    const isSelected = activeBadgeId === stage.id;
+                    return (
+                      <button
+                        key={stage.id}
+                        onClick={() => setActiveBadgeId(stage.id)}
+                        aria-label={`${stage.badge.name}: ${earned ? 'earned' : 'locked'}`}
+                        aria-pressed={isSelected}
+                        title={`${stage.badge.name} - ${earned ? 'earned' : 'locked'}`}
+                        className={`relative h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 ${earned ? 'shadow-[0_0_14px_rgba(250,204,21,0.45)] hover:scale-110' : 'opacity-70 hover:opacity-100'} ${isSelected ? 'scale-110 ring-2 ring-yellow-300' : ''}`}
+                      >
+                        <BadgeIcon stage={stage} earned={earned} className="h-full w-full" />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
