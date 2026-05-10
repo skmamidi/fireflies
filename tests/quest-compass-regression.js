@@ -134,6 +134,12 @@ async function openPassport(page) {
   return passport;
 }
 
+async function fieldReport(page, badgeName) {
+  const report = page.getByRole('dialog', { name: new RegExp(`${badgeName} field report`, 'i') });
+  await report.waitFor({ timeout: 60000 });
+  return report;
+}
+
 async function passportStageText(passport, stageId) {
   return passport.locator(`[data-passport-stage-id="${stageId}"]`).innerText();
 }
@@ -245,7 +251,13 @@ async function run() {
     assert.equal(await storedCurrentStage(page), '0');
 
     await page.getByRole('button', { name: 'Begin Global Research' }).click();
-    await page.waitForTimeout(350);
+    const firstReport = await fieldReport(page, 'First Flash');
+    await firstReport.getByText('Badge Earned').waitFor({ timeout: 60000 });
+    await firstReport.getByText('What you proved').waitFor({ timeout: 60000 });
+    await firstReport.getByText('Science takeaway').waitFor({ timeout: 60000 });
+    await firstReport.getByText('Badge and field report are logged in your passport.').waitFor({ timeout: 60000 });
+    await firstReport.getByRole('button', { name: /Continue to Family Tree/ }).click();
+    await page.waitForTimeout(250);
     await assertCompassIncludes(page, 'Mission 2/14');
     await assertCompassIncludes(page, 'Family Tree');
     await assertCompassIncludes(page, 'Build the science family tree from kingdom to firefly branch.');
