@@ -106,6 +106,81 @@
         }
         .animate-mangrove { animation: mangrove 0.27s linear infinite; }
 
+        .atlas-signal-orb {
+          position: absolute;
+          width: var(--signal-size, 10px);
+          height: var(--signal-size, 10px);
+          border-radius: 999px;
+          background: var(--signal-color, #fef08a);
+          box-shadow: 0 0 16px var(--signal-color, #fef08a), 0 0 34px color-mix(in srgb, var(--signal-color, #fef08a) 64%, transparent);
+          animation-delay: var(--signal-delay, 0s);
+          transform: translate(-50%, -50%) scale(0.9);
+          mix-blend-mode: screen;
+        }
+
+        .atlas-signal-orb::after {
+          content: "";
+          position: absolute;
+          inset: -170%;
+          border-radius: inherit;
+          background: radial-gradient(circle, color-mix(in srgb, var(--signal-color, #fef08a) 38%, transparent), transparent 66%);
+          opacity: 0.75;
+        }
+
+        @keyframes atlasSingleSync {
+          0%, 38% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+          44%, 100% { opacity: 0.08; transform: translate(-50%, -50%) scale(0.62); }
+        }
+        .atlas-single-sync { animation: atlasSingleSync 0.65s linear infinite; }
+
+        @keyframes atlasBurstPause {
+          0%, 3%, 6%, 9%, 12%, 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+          1.5%, 4.5%, 7.5%, 10.5%, 13.5%, 16.5%, 100% { opacity: 0.06; transform: translate(-50%, -50%) scale(0.52); }
+        }
+        .atlas-burst-pause { animation: atlasBurstPause 10.5s linear infinite; }
+
+        @keyframes atlasTriplet {
+          0%, 5%, 13%, 18%, 26%, 31% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+          6%, 12%, 19%, 25%, 32%, 100% { opacity: 0.07; transform: translate(-50%, -50%) scale(0.55); }
+        }
+        .atlas-triplet { animation: atlasTriplet 5s linear infinite; }
+
+        @keyframes atlasRiverPulse {
+          0%, 12% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+          16%, 100% { opacity: 0.11; transform: translate(-50%, -50%) scale(0.58); }
+        }
+        .atlas-river-pulse { animation: atlasRiverPulse 3s linear infinite; }
+
+        @keyframes atlasMangroveClock {
+          0%, 33% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+          36%, 100% { opacity: 0.12; transform: translate(-50%, -50%) scale(0.62); }
+        }
+        .atlas-mangrove-clock { animation: atlasMangroveClock 0.27s linear infinite; }
+
+        @keyframes atlasMeadowFlash {
+          0%, 42% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
+          46%, 100% { opacity: 0.12; transform: translate(-50%, -50%) scale(0.58); }
+        }
+        .atlas-meadow-flash { animation: atlasMeadowFlash 0.52s linear infinite; }
+
+        @keyframes atlasBlueGhost {
+          0%, 86%, 100% { opacity: 0.56; transform: translate(-50%, -50%) scale(0.92); }
+          44% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+        }
+        .atlas-blue-ghost { animation: atlasBlueGhost 18s ease-in-out infinite; }
+
+        @keyframes atlasMoundGlow {
+          0%, 100% { opacity: 0.72; transform: translate(-50%, -50%) scale(0.92); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+        }
+        .atlas-mound-glow { animation: atlasMoundGlow 4.8s ease-in-out infinite; }
+
+        @keyframes atlasSoftDrift {
+          0%, 100% { transform: translate3d(-1.5%, 0, 0); opacity: 0.28; }
+          50% { transform: translate3d(2%, -1%, 0); opacity: 0.48; }
+        }
+        .atlas-mist-drift { animation: atlasSoftDrift 9s ease-in-out infinite; }
+
         @keyframes mapFloat {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-6px); }
@@ -233,6 +308,22 @@
         .polished-surface:hover::after,
         .polished-surface:focus-within::after {
           animation: surfaceSheen 1.45s ease;
+        }
+
+        .science-word-link {
+          color: #67e8f9;
+          font-weight: 800;
+          text-decoration: underline;
+          text-decoration-style: dotted;
+          text-underline-offset: 3px;
+          transition: color 160ms ease, text-shadow 160ms ease, background-color 160ms ease;
+        }
+
+        .science-word-link:hover,
+        .science-word-link:focus-visible {
+          color: #fef08a;
+          text-shadow: 0 0 12px rgba(250, 204, 21, 0.4);
+          outline: none;
         }
 
         .academy-header {
@@ -779,6 +870,9 @@
           .tap-ripple::before,
           .tap-ripple::after,
           .field-notebook-stamp,
+          .atlas-signal-orb,
+          .atlas-signal-orb::after,
+          .atlas-mist-drift,
           .atlas-stamp-slot.is-new-stamp,
           .atlas-stamp-slot.is-new-stamp::after,
           .survey-scan-sweep,
@@ -1660,6 +1754,772 @@
       if (!isPlainNotebookObject(value)) return false;
       return requiredKeys.every(key => Object.prototype.hasOwnProperty.call(value, key)) && extraCheck(value);
     };
+
+    const SCIENCE_GLOSSARY_ENTRIES = [
+      {
+        terms: ['abdomen'],
+        title: 'Abdomen',
+        explanation: 'The abdomen is the back part of an insect body. On a firefly, this is where the glowing lantern usually sits.',
+        detail: 'A firefly has three main body parts: head, thorax, and abdomen. The abdomen also holds many important organs.',
+        visual: 'anatomy'
+      },
+      {
+        terms: ['aequorin'],
+        title: 'Aequorin',
+        explanation: 'Aequorin is a glow-making protein first studied from a jellyfish. It gives off blue light when it meets calcium.',
+        detail: 'Scientists used aequorin to learn how living cells send tiny chemical messages.',
+        visual: 'protein'
+      },
+      {
+        terms: ['aquatic'],
+        title: 'Aquatic',
+        explanation: 'Aquatic means living in water or spending an important part of life in water.',
+        detail: 'Some firefly larvae live beside streams, and a few, like Genji-botaru, grow up in clean flowing water.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['arid'],
+        title: 'Arid',
+        explanation: 'Arid means very dry. Deserts and dry canyons are arid places.',
+        detail: 'A dry habitat can still have fireflies if rain, springs, or stream edges make damp pockets.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['ATP'],
+        title: 'ATP',
+        explanation: 'ATP is a tiny energy packet inside living things. Cells use it like a rechargeable battery.',
+        detail: 'In a firefly lantern, ATP helps power the reaction that turns chemistry into cold light.',
+        visual: 'energy'
+      },
+      {
+        terms: ['bacteria', 'Vibrio'],
+        title: 'Bacteria',
+        explanation: 'Bacteria are living things so tiny that you need a microscope to see them.',
+        detail: 'Some animals keep helpful glowing bacteria in special pouches, almost like carrying a living night-light.',
+        visual: 'microbe'
+      },
+      {
+        terms: ['Berembang'],
+        title: 'Berembang Tree',
+        explanation: 'A Berembang tree is a mangrove tree that grows along tidal rivers in Southeast Asia.',
+        detail: 'Some mangrove fireflies gather on these trees, turning the branches into flashing meeting places.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['bioluminescence', 'bioluminescent', 'luminous'],
+        title: 'Bioluminescence',
+        explanation: 'Bioluminescence means light made by a living thing.',
+        detail: 'Fireflies, some mushrooms, deep-sea fish, and tiny ocean plankton can all make living light.',
+        visual: 'chemistry'
+      },
+      {
+        terms: ['bottomland'],
+        title: 'Bottomland',
+        explanation: 'Bottomland is low, flat land near a river that can stay damp or flood sometimes.',
+        detail: 'Damp bottomland forests can be great homes for firefly larvae and their small prey.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['camouflage', 'counter-illumination', 'counterlight'],
+        title: 'Camouflage',
+        explanation: 'Camouflage is a way to blend in so another animal has trouble seeing you.',
+        detail: 'Some glowing animals match the light around them, hiding their shadow from hunters below.',
+        visual: 'camouflage'
+      },
+      {
+        terms: ['canopy'],
+        title: 'Canopy',
+        explanation: 'The canopy is the leafy roof made by tree branches high above the ground.',
+        detail: 'Some fireflies fly high in the canopy, so their flashes appear above your head instead of near your shoes.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['cephalopod'],
+        title: 'Cephalopod',
+        explanation: 'A cephalopod is a soft-bodied ocean animal such as a squid, octopus, or cuttlefish.',
+        detail: 'Many cephalopods are smart escape artists with arms, color tricks, and sometimes glowing parts.',
+        visual: 'cephalopod'
+      },
+      {
+        terms: ['chemical reaction', 'reaction', 'chemistry', 'chemical', 'chemicals', 'chemical cues', 'defensive chemicals', 'metabolism'],
+        title: 'Chemical Reaction',
+        explanation: 'A chemical reaction happens when tiny pieces of matter rearrange to make something new.',
+        detail: 'In fireflies, a reaction changes chemical energy into light instead of a lot of heat.',
+        visual: 'chemistry'
+      },
+      {
+        terms: ['cold light'],
+        title: 'Cold Light',
+        explanation: 'Cold light is light that makes very little heat.',
+        detail: 'A firefly lantern is far cooler than a hot light bulb, so the insect does not cook itself while glowing.',
+        visual: 'chemistry'
+      },
+      {
+        terms: ['continuous'],
+        title: 'Continuous',
+        explanation: 'Continuous means something keeps going without many breaks.',
+        detail: 'A continuous glow is more like a soft night-light than a quick blink.',
+        visual: 'signal'
+      },
+      {
+        terms: ['courtship'],
+        title: 'Courtship',
+        explanation: 'Courtship is the way animals show they are ready to find a mate.',
+        detail: 'For many fireflies, courtship is a careful flash conversation between males and females.',
+        visual: 'signal'
+      },
+      {
+        terms: ['crustacean', 'crustaceans', 'ostracod', 'ostracods'],
+        title: 'Crustacean',
+        explanation: 'A crustacean is an animal with a hard outer shell, such as a crab, shrimp, or tiny ostracod.',
+        detail: 'Sea fireflies are tiny crustaceans that release glowing chemicals into the water.',
+        visual: 'ocean'
+      },
+      {
+        terms: ['decaying'],
+        title: 'Decaying',
+        explanation: 'Decaying means breaking down after something dies, like a fallen log slowly becoming soil.',
+        detail: 'Fungi are expert recyclers, and some glowing fungi grow in decaying wood.',
+        visual: 'fungus'
+      },
+      {
+        terms: ['decomposer'],
+        title: 'Decomposer',
+        explanation: 'A decomposer is a living recycler that breaks dead plants or animals into smaller pieces.',
+        detail: 'Fungi and bacteria help return nutrients to soil so new living things can grow.',
+        visual: 'fungus'
+      },
+      {
+        terms: ['defensive', 'predatory', 'toxic'],
+        title: 'Defensive',
+        explanation: 'Defensive means used for protection.',
+        detail: 'A glow, bad taste, or warning color can tell predators to back away before anyone gets hurt.',
+        visual: 'predator'
+      },
+      {
+        terms: ['emit', 'emits'],
+        title: 'Emit',
+        explanation: 'Emit means to send something out.',
+        detail: 'A lantern can emit light, a flower can emit a smell, and a speaker can emit sound.',
+        visual: 'signal'
+      },
+      {
+        terms: ['enzyme', 'luciferase'],
+        title: 'Enzyme',
+        explanation: 'An enzyme is a helper molecule that makes a reaction happen faster.',
+        detail: 'Luciferase is the enzyme that helps firefly luciferin light up.',
+        visual: 'enzyme'
+      },
+      {
+        terms: ['flightless', 'wingless'],
+        title: 'Flightless',
+        explanation: 'Flightless means an animal has no working wings for flying.',
+        detail: 'Some female fireflies stay on the ground and glow while flying males search for them.',
+        visual: 'anatomy'
+      },
+      {
+        terms: ['fluorescent', 'green fluorescent protein', 'GFP'],
+        title: 'Fluorescent',
+        explanation: 'Fluorescent things absorb one color of light and shine back a different color.',
+        detail: 'Green fluorescent protein from jellyfish became a famous tool for lighting up parts of cells in research.',
+        visual: 'protein'
+      },
+      {
+        terms: ['fungus', 'fungi', 'fungal'],
+        title: 'Fungus',
+        explanation: 'A fungus is a living thing such as a mushroom, mold, or yeast.',
+        detail: 'Fungi are not plants or animals. Many break down old wood and leaves.',
+        visual: 'fungus'
+      },
+      {
+        terms: ['genus', 'Photinus', 'Photuris', 'Phausis', 'Ellychnia', 'Pyractomena', 'Luciola', 'Pteroptyx', 'Lamprigera', 'Macrolampis'],
+        title: 'Genus',
+        explanation: 'A genus is a close group of living things. It is the first word in many scientific names.',
+        detail: 'Photinus and Photuris are two different firefly genera, a bit like two branches on the firefly family tree.',
+        visual: 'taxonomy'
+      },
+      {
+        terms: ['frontalis', 'carolinus', 'pyralis', 'reticulata', 'corruscus', 'corrusca', 'borealis', 'cruciata', 'tener', 'knulli', 'versicolor', 'spp', 'complex'],
+        title: 'Scientific Name Word',
+        explanation: 'A scientific name word is part of the special name scientists use for one living thing or a close group.',
+        detail: 'Scientific names often use Latin or Latin-like words so researchers around the world can talk about the same organism.',
+        visual: 'taxonomy'
+      },
+      {
+        terms: ['gill', 'gills'],
+        title: 'Gills',
+        explanation: 'Gills are thin parts that help some living things exchange gases or release spores.',
+        detail: 'On a mushroom, gills are the thin plates under the cap where many spores form.',
+        visual: 'fungus'
+      },
+      {
+        terms: ['habitat', 'habitats', 'mangrove', 'tidal', 'tides', 'vegetation'],
+        title: 'Habitat',
+        explanation: 'A habitat is the natural home where a living thing gets food, shelter, water, and space.',
+        detail: 'Fireflies often need damp soil, leaf litter, darkness, and places for larvae to hunt.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['hardwood'],
+        title: 'Hardwood Forest',
+        explanation: 'A hardwood forest has many broad-leaf trees such as oaks, maples, and beeches.',
+        detail: 'These forests drop leaf litter that keeps the ground damp for many firefly larvae.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['interval', 'intervals'],
+        title: 'Interval',
+        explanation: 'An interval is the time between two events.',
+        detail: 'A firefly flash interval is the pause between one flash and the next.',
+        visual: 'signal'
+      },
+      {
+        terms: ['J-shaped'],
+        title: 'J-Shaped Flash',
+        explanation: 'J-shaped means the path curves like the letter J.',
+        detail: 'The Big Dipper Firefly often flies upward while flashing, making a little glowing J in the air.',
+        visual: 'signal'
+      },
+      {
+        terms: ['larva', 'larvae', 'larval', 'pupa', 'pupae'],
+        title: 'Larva',
+        explanation: 'A larva is a young form of an animal before it becomes an adult.',
+        detail: 'Firefly larvae often live near the ground and hunt soft-bodied prey like snails or slugs.',
+        visual: 'larva'
+      },
+      {
+        terms: ['lanternless'],
+        title: 'Lanternless',
+        explanation: 'Lanternless means having no working light organ as an adult.',
+        detail: 'Some adult fireflies do not flash. They may use smell messages instead.',
+        visual: 'anatomy'
+      },
+      {
+        terms: ['lek', 'leks'],
+        title: 'Lek',
+        explanation: 'A lek is a display spot where many males gather and show off for females.',
+        detail: 'In a firefly lek, the best-timed or brightest signals may get the most attention.',
+        visual: 'mimic'
+      },
+      {
+        terms: ['luciferin'],
+        title: 'Luciferin',
+        explanation: 'Luciferin is the glow fuel in a firefly lantern.',
+        detail: 'When luciferin meets oxygen, ATP, and luciferase, the reaction releases light.',
+        visual: 'chemistry'
+      },
+      {
+        terms: ['lure', 'lures', 'esca'],
+        title: 'Lure',
+        explanation: 'A lure is something used to attract another living thing closer.',
+        detail: 'An anglerfish lure works like bait, but it glows in the deep sea.',
+        visual: 'predator'
+      },
+      {
+        terms: ['mimic', 'mimics', 'mimicking'],
+        title: 'Mimic',
+        explanation: 'A mimic copies another living thing or signal.',
+        detail: 'Some Photuris females mimic the flash replies of other fireflies to trick males.',
+        visual: 'mimic'
+      },
+      {
+        terms: ['molecule', 'molecules'],
+        title: 'Molecule',
+        explanation: 'A molecule is a tiny group of atoms joined together.',
+        detail: 'Luciferin, oxygen, and ATP are molecules involved in the firefly glow reaction.',
+        visual: 'chemistry'
+      },
+      {
+        terms: ['monsoon', 'monsoons'],
+        title: 'Monsoon',
+        explanation: 'A monsoon is a seasonal weather pattern that brings a lot of rain.',
+        detail: 'In the Southwest, monsoon rain can briefly turn dry places damp enough for fireflies to emerge.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['mucus'],
+        title: 'Mucus',
+        explanation: 'Mucus is a slippery gel made by living things.',
+        detail: 'The vampire squid can release glowing mucus that distracts predators in the dark ocean.',
+        visual: 'cephalopod'
+      },
+      {
+        terms: ['nocturnal'],
+        title: 'Nocturnal',
+        explanation: 'Nocturnal means active at night.',
+        detail: 'Many glowing animals use darkness to make their signals easier to see.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['old-growth'],
+        title: 'Old-Growth Forest',
+        explanation: 'Old-growth forest has many older trees, fallen logs, and layers of life.',
+        detail: 'Those layers can make damp, protected micro-homes for insects, fungi, and larvae.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['organ', 'organs', 'light organ', 'light organs', 'photophore', 'photophores', 'photocyte', 'photocytes', 'mantle cavity', 'ventral', 'abdominal'],
+        title: 'Organ',
+        explanation: 'An organ is a body part with a special job.',
+        detail: 'A light organ or photophore is a body part that makes or holds light.',
+        visual: 'anatomy'
+      },
+      {
+        terms: ['oxygen'],
+        title: 'Oxygen',
+        explanation: 'Oxygen is a gas in air that many living things need to live.',
+        detail: 'Fireflies also use oxygen inside the lantern reaction to make light.',
+        visual: 'air'
+      },
+      {
+        terms: ['overwinter', 'overwintering'],
+        title: 'Overwinter',
+        explanation: 'Overwinter means to survive through winter.',
+        detail: 'Some winter fireflies tuck onto tree trunks or under bark until warmer days return.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['pheromone', 'pheromones'],
+        title: 'Pheromone',
+        explanation: 'A pheromone is a smell message sent between animals of the same kind.',
+        detail: 'Lanternless fireflies may use pheromones instead of flashes to find mates.',
+        visual: 'signal'
+      },
+      {
+        terms: ['plankton'],
+        title: 'Plankton',
+        explanation: 'Plankton are tiny living things that drift in water.',
+        detail: 'Some plankton flash when waves or predators disturb them.',
+        visual: 'ocean'
+      },
+      {
+        terms: ['predator', 'predators', 'prey'],
+        title: 'Predator and Prey',
+        explanation: 'A predator hunts other animals. Prey is the animal being hunted.',
+        detail: 'Glowing can warn a predator, confuse it, or lure prey closer.',
+        visual: 'predator'
+      },
+      {
+        terms: ['protein', 'proteins'],
+        title: 'Protein',
+        explanation: 'A protein is a tiny worker molecule inside living things.',
+        detail: 'Some proteins build body parts. Others help send messages or make light.',
+        visual: 'protein'
+      },
+      {
+        terms: ['pulse', 'pulses', 'pulsed'],
+        title: 'Pulse',
+        explanation: 'A pulse is a quick beat or burst.',
+        detail: 'A pulsed firefly signal turns on and off in a pattern, like a tiny blinking code.',
+        visual: 'signal'
+      },
+      {
+        terms: ['revered'],
+        title: 'Revered',
+        explanation: 'Revered means deeply respected or treasured.',
+        detail: 'Some fireflies are famous in local culture because their glowing displays are so special.',
+        visual: 'signal'
+      },
+      {
+        terms: ['riparian'],
+        title: 'Riparian',
+        explanation: 'Riparian means beside a river, stream, or wash.',
+        detail: 'Riparian strips can stay greener and damper than the land around them.',
+        visual: 'habitat'
+      },
+      {
+        terms: ['species', 'species-specific'],
+        title: 'Species',
+        explanation: 'A species is one kind of living thing that can usually have young with others of the same kind.',
+        detail: 'Firefly species can look similar, so flash timing, color, and habitat help scientists tell them apart.',
+        visual: 'taxonomy'
+      },
+      {
+        terms: ['spore', 'spores'],
+        title: 'Spore',
+        explanation: 'A spore is a tiny starter cell that can grow into a new fungus or plant-like organism.',
+        detail: 'Mushrooms release spores, and insects may accidentally carry them to new places.',
+        visual: 'fungus'
+      },
+      {
+        terms: ['symbiotic'],
+        title: 'Symbiotic',
+        explanation: 'Symbiotic means two different living things live closely together.',
+        detail: 'A bobtail squid and its glowing bacteria are partners: the bacteria get a home, and the squid gets light.',
+        visual: 'microbe'
+      },
+      {
+        terms: ['synchrony', 'synchronous', 'synchronize', 'synchronized'],
+        title: 'Synchrony',
+        explanation: 'Synchrony means doing something at the same time.',
+        detail: 'Synchronous fireflies flash together, making a whole group blink like one living clock.',
+        visual: 'signal'
+      }
+    ];
+
+    const SCIENCE_GLOSSARY_LOOKUP = SCIENCE_GLOSSARY_ENTRIES.reduce((lookup, entry) => {
+      entry.terms.forEach(term => {
+        lookup[term.toLowerCase()] = entry;
+      });
+      return lookup;
+    }, {});
+
+    const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const SCIENCE_GLOSSARY_PATTERN = new RegExp(`\\b(${SCIENCE_GLOSSARY_ENTRIES.flatMap(entry => entry.terms).sort((a, b) => b.length - a.length).map(escapeRegex).join('|')})\\b`, 'gi');
+
+    const glossaryEntryFor = (term) => SCIENCE_GLOSSARY_LOOKUP[String(term).toLowerCase()];
+
+    function ScienceTermButton({ term, entry, onSelect }) {
+      return (
+        <button
+          type="button"
+          className="science-word-link inline align-baseline rounded-md px-0.5"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect({ ...entry, matchedTerm: term });
+          }}
+        >
+          {term}
+        </button>
+      );
+    }
+
+    function renderScienceText(text, onSelect) {
+      if (!text) return null;
+      return String(text).split(SCIENCE_GLOSSARY_PATTERN).map((part, index) => {
+        const entry = glossaryEntryFor(part);
+        return entry
+          ? <ScienceTermButton key={`${part}-${index}`} term={part} entry={entry} onSelect={onSelect} />
+          : part;
+      });
+    }
+
+    function ScienceWordIllustration({ visual = 'chemistry', title = 'Science word' }) {
+      const baseId = useId().replace(/:/g, '');
+      const glowId = `word-glow-${baseId}`;
+      const skyId = `word-sky-${baseId}`;
+      const beamId = `word-beam-${baseId}`;
+
+      const commonDefs = (
+        <defs>
+          <radialGradient id={glowId} cx="50%" cy="45%" r="55%">
+            <stop offset="0%" stopColor="#fef08a" stopOpacity="0.95" />
+            <stop offset="52%" stopColor="#22d3ee" stopOpacity="0.26" />
+            <stop offset="100%" stopColor="#0f172a" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id={skyId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#164e63" />
+            <stop offset="48%" stopColor="#312e81" />
+            <stop offset="100%" stopColor="#0f172a" />
+          </linearGradient>
+          <linearGradient id={beamId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fef9c3" />
+            <stop offset="60%" stopColor="#67e8f9" />
+            <stop offset="100%" stopColor="#34d399" />
+          </linearGradient>
+        </defs>
+      );
+
+      const chemistryScene = (
+        <>
+          <circle cx="135" cy="86" r="58" fill={`url(#${glowId})`} />
+          <path d="M64 132c20-38 106-38 128 0v24H64z" fill="#0f172a" stroke="#334155" strokeWidth="3" />
+          <path d="M91 130c4-24 8-42 44-42s42 18 48 42" fill="#1e293b" stroke="#facc15" strokeWidth="3" />
+          <circle cx="105" cy="78" r="13" fill="#facc15" />
+          <circle cx="151" cy="63" r="10" fill="#67e8f9" />
+          <circle cx="174" cy="95" r="9" fill="#a78bfa" />
+          <path d="M116 74l25-8M158 71l12 17M115 85l50 10" stroke="#e0f2fe" strokeWidth="4" strokeLinecap="round" />
+          <path d="M123 115c15 9 33 9 49 0" stroke="#fef08a" strokeWidth="5" strokeLinecap="round" />
+        </>
+      );
+
+      const microbeScene = (
+        <>
+          <circle cx="128" cy="92" r="68" fill={`url(#${glowId})`} />
+          {[70, 108, 150, 188].map((x, i) => (
+            <g key={x} transform={`translate(${x} ${82 + (i % 2) * 32}) rotate(${i * 18})`}>
+              <ellipse cx="0" cy="0" rx="24" ry="12" fill="#22d3ee" stroke="#cffafe" strokeWidth="3" />
+              <path d="M-15-5c8 8 18 8 30 0M-12 5c6 6 15 6 26 0" stroke="#155e75" strokeWidth="3" strokeLinecap="round" />
+              <path d="M23 0c13 2 21 8 25 18" stroke="#67e8f9" strokeWidth="3" strokeLinecap="round" fill="none" />
+            </g>
+          ))}
+          <rect x="61" y="150" width="134" height="13" rx="7" fill="#0f172a" stroke="#334155" strokeWidth="3" />
+        </>
+      );
+
+      const oceanScene = (
+        <>
+          <path d="M36 126c22-17 42-17 64 0s42 17 64 0 41-17 62 0v44H36z" fill="#075985" />
+          <path d="M35 113c23-14 44-14 67 0s43 14 66 0 39-14 59 0" fill="none" stroke="#67e8f9" strokeWidth="5" strokeLinecap="round" />
+          {[76, 112, 148, 184].map((x, i) => (
+            <g key={x}>
+              <circle cx={x} cy={72 + i * 7} r="14" fill="#22d3ee" opacity="0.23" />
+              <circle cx={x} cy={72 + i * 7} r="5" fill="#fef08a" />
+              <path d={`M${x - 14} ${70 + i * 7}c8-10 20-10 28 0`} stroke="#bae6fd" strokeWidth="3" fill="none" strokeLinecap="round" />
+            </g>
+          ))}
+          <circle cx="182" cy="54" r="24" fill={`url(#${glowId})`} />
+        </>
+      );
+
+      const predatorScene = (
+        <>
+          <circle cx="98" cy="78" r="46" fill={`url(#${glowId})`} />
+          <path d="M60 106c33-44 92-47 133-8-21 21-51 28-85 21l-31 20 7-29c-8-1-16-2-24-4z" fill="#155e75" stroke="#67e8f9" strokeWidth="4" />
+          <circle cx="158" cy="96" r="5" fill="#fef08a" />
+          <path d="M56 70c-16-10-21-24-15-38 19 2 32 11 39 27" fill="#a3e635" stroke="#ecfccb" strokeWidth="3" />
+          <path d="M73 71c21-4 40 2 58 17" stroke="#fef08a" strokeWidth="4" strokeLinecap="round" strokeDasharray="6 7" fill="none" />
+          <path d="M181 65l15-14M191 82l22-3M181 99l19 11" stroke="#fef08a" strokeWidth="4" strokeLinecap="round" />
+        </>
+      );
+
+      const fungusScene = (
+        <>
+          <path d="M47 139c27-16 64-20 108-12 27 5 46 4 59-2v37H47z" fill="#14532d" />
+          <path d="M57 136c39 10 86 10 140 0" stroke="#78350f" strokeWidth="20" strokeLinecap="round" />
+          {[78, 120, 162].map((x, i) => (
+            <g key={x}>
+              <path d={`M${x} 128c0-20 ${8 + i * 3}-33 ${21 + i * 2}-39`} stroke="#fef3c7" strokeWidth="9" strokeLinecap="round" />
+              <path d={`M${x - 25} ${90 - i * 5}c17-30 58-30 75 1-18 11-55 12-75-1z`} fill="#fb923c" stroke="#fed7aa" strokeWidth="4" />
+              <circle cx={x + 5} cy={98 - i * 5} r="23" fill={`url(#${glowId})`} opacity="0.48" />
+            </g>
+          ))}
+          {[88, 104, 179, 195, 143].map((x, i) => <circle key={x} cx={x} cy={55 + i * 10} r="3.5" fill="#bbf7d0" />)}
+        </>
+      );
+
+      const larvaScene = (
+        <>
+          <path d="M38 140c39 12 89 12 180 0" stroke="#166534" strokeWidth="16" strokeLinecap="round" />
+          {[76, 98, 120, 142, 164].map((x, i) => (
+            <ellipse key={x} cx={x} cy={112 + Math.sin(i) * 4} rx="17" ry="14" fill={i === 4 ? '#facc15' : '#334155'} stroke="#94a3b8" strokeWidth="3" />
+          ))}
+          <circle cx="64" cy="111" r="15" fill="#475569" stroke="#cbd5e1" strokeWidth="3" />
+          <circle cx="59" cy="106" r="2.5" fill="#e0f2fe" />
+          <path d="M177 113c21 2 34-8 39-29" stroke="#fef08a" strokeWidth="4" strokeLinecap="round" fill="none" />
+          <circle cx="184" cy="113" r="26" fill={`url(#${glowId})`} />
+        </>
+      );
+
+      const proteinScene = (
+        <>
+          <circle cx="128" cy="90" r="68" fill={`url(#${glowId})`} />
+          <path d="M69 108c22-52 75 49 112-5 16-23 2-53-29-45-23 6-33 36-8 52 24 16 55 0 55 0" fill="none" stroke="#67e8f9" strokeWidth="12" strokeLinecap="round" />
+          <path d="M74 105c25-31 48 10 68 4 19-5 20-33 2-38" fill="none" stroke="#fef08a" strokeWidth="5" strokeLinecap="round" />
+          {[77, 103, 133, 161, 190].map((x, i) => <circle key={x} cx={x} cy={73 + (i % 3) * 24} r="5" fill="#fef9c3" />)}
+        </>
+      );
+
+      const camouflageScene = (
+        <>
+          <circle cx="136" cy="38" r="19" fill="#f8fafc" opacity="0.85" />
+          <path d="M31 112c28-13 54-13 82 0s54 13 110 0v56H31z" fill="#075985" />
+          <path d="M83 109c22-30 68-30 91 0-16 19-76 20-91 0z" fill="#1e293b" stroke="#67e8f9" strokeWidth="4" />
+          <path d="M111 112c13 13 29 13 47 0" stroke="#fef08a" strokeWidth="6" strokeLinecap="round" />
+          <path d="M101 124l-24 19M158 124l27 18M94 101l-21-16M164 101l22-18" stroke="#94a3b8" strokeWidth="5" strokeLinecap="round" />
+          <path d="M128 58v51" stroke="#f8fafc" strokeWidth="3" strokeDasharray="5 7" opacity="0.7" />
+        </>
+      );
+
+      const signalScene = (
+        <>
+          <path d="M45 139c43-21 116-21 166 0v27H45z" fill="#14532d" />
+          {[69, 121, 176].map((x, i) => (
+            <g key={x}>
+              <ellipse cx={x} cy={111 - i * 8} rx="10" ry="18" fill="#334155" stroke="#94a3b8" strokeWidth="3" />
+              <ellipse cx={x - 9} cy={103 - i * 8} rx="7" ry="13" fill="#e0f2fe" opacity="0.32" />
+              <ellipse cx={x + 9} cy={103 - i * 8} rx="7" ry="13" fill="#e0f2fe" opacity="0.32" />
+              <circle cx={x} cy={129 - i * 8} r="9" fill="#facc15" />
+              <circle cx={x} cy={129 - i * 8} r="28" fill={`url(#${glowId})`} />
+            </g>
+          ))}
+          <path d="M72 66c21-21 44-21 66 0s44 21 66 0" stroke="#fef08a" strokeWidth="5" strokeLinecap="round" fill="none" strokeDasharray="8 9" />
+        </>
+      );
+
+      const habitatScene = (
+        <>
+          <path d="M34 136c39-22 70-22 108 0s62 17 82 5v31H34z" fill="#14532d" />
+          <path d="M91 142c11-47 6-80-14-102M166 140c-8-51 1-84 28-102" stroke="#78350f" strokeWidth="10" strokeLinecap="round" />
+          <circle cx="66" cy="50" r="29" fill="#22c55e" opacity="0.9" />
+          <circle cx="96" cy="43" r="35" fill="#16a34a" opacity="0.92" />
+          <circle cx="187" cy="51" r="31" fill="#22c55e" opacity="0.9" />
+          <path d="M48 148c32-18 64-18 96 0s52 14 72 3" stroke="#67e8f9" strokeWidth="7" strokeLinecap="round" fill="none" />
+          <circle cx="135" cy="88" r="34" fill={`url(#${glowId})`} />
+        </>
+      );
+
+      const mimicScene = (
+        <>
+          <circle cx="92" cy="110" r="28" fill={`url(#${glowId})`} />
+          <circle cx="166" cy="82" r="28" fill={`url(#${glowId})`} />
+          {[88, 166].map((x, i) => (
+            <g key={x}>
+              <ellipse cx={x} cy={102 - i * 27} rx="11" ry="19" fill={i ? '#365314' : '#334155'} stroke="#d9f99d" strokeWidth="3" />
+              <ellipse cx={x - 10} cy={94 - i * 27} rx="7" ry="14" fill="#e0f2fe" opacity="0.34" />
+              <ellipse cx={x + 10} cy={94 - i * 27} rx="7" ry="14" fill="#e0f2fe" opacity="0.34" />
+              <circle cx={x} cy={122 - i * 27} r="8" fill="#d9f99d" />
+            </g>
+          ))}
+          <path d="M71 57h42M71 70h22M143 126h42M143 139h22" stroke="#fef08a" strokeWidth="6" strokeLinecap="round" strokeDasharray="10 8" />
+          <path d="M119 99c15-9 25-12 37-13" stroke="#67e8f9" strokeWidth="4" strokeLinecap="round" markerEnd="" />
+        </>
+      );
+
+      const anatomyScene = (
+        <>
+          <circle cx="130" cy="91" r="65" fill={`url(#${glowId})`} />
+          <ellipse cx="86" cy="88" rx="19" ry="24" fill="#334155" stroke="#cbd5e1" strokeWidth="3" />
+          <ellipse cx="126" cy="90" rx="28" ry="38" fill="#475569" stroke="#cbd5e1" strokeWidth="3" />
+          <ellipse cx="169" cy="99" rx="27" ry="42" fill="#1e293b" stroke="#cbd5e1" strokeWidth="3" />
+          <ellipse cx="159" cy="116" rx="18" ry="19" fill="#facc15" />
+          <ellipse cx="114" cy="75" rx="30" ry="45" fill="#e0f2fe" opacity="0.26" transform="rotate(-28 114 75)" />
+          <ellipse cx="145" cy="75" rx="30" ry="45" fill="#e0f2fe" opacity="0.26" transform="rotate(28 145 75)" />
+          <path d="M72 112l-25 21M98 117l-17 27M154 129l8 28M181 123l24 25" stroke="#94a3b8" strokeWidth="5" strokeLinecap="round" />
+        </>
+      );
+
+      const cephalopodScene = (
+        <>
+          <circle cx="128" cy="83" r="59" fill={`url(#${glowId})`} />
+          <path d="M94 78c6-35 61-35 68 0 6 30-8 50-34 50S88 108 94 78z" fill="#312e81" stroke="#a5b4fc" strokeWidth="4" />
+          <circle cx="113" cy="82" r="5" fill="#fef08a" />
+          <circle cx="144" cy="82" r="5" fill="#fef08a" />
+          {[84, 101, 118, 136, 153, 170].map((x, i) => (
+            <path key={x} d={`M${x} 118c${-18 + i * 7} 19 ${-24 + i * 8} 32 ${-14 + i * 9} 43`} stroke="#818cf8" strokeWidth="6" strokeLinecap="round" fill="none" />
+          ))}
+          <path d="M168 95c22 2 32 10 42 24" stroke="#67e8f9" strokeWidth="5" strokeLinecap="round" strokeDasharray="4 7" fill="none" />
+        </>
+      );
+
+      const taxonomyScene = (
+        <>
+          <path d="M128 145V63M128 88L82 56M128 88l50-36M128 119l-48 28M128 119l52 25" stroke="#67e8f9" strokeWidth="6" strokeLinecap="round" fill="none" />
+          {[128, 82, 178, 80, 180].map((x, i) => (
+            <g key={`${x}-${i}`}>
+              <circle cx={x} cy={[63, 56, 52, 147, 144][i]} r="21" fill={i === 0 ? '#facc15' : '#1e293b'} stroke="#fef08a" strokeWidth="3" />
+              <circle cx={x} cy={[63, 56, 52, 147, 144][i]} r="41" fill={`url(#${glowId})`} opacity={i === 0 ? '0.55' : '0.22'} />
+            </g>
+          ))}
+          <path d="M107 31h42" stroke="#c4b5fd" strokeWidth="5" strokeLinecap="round" />
+        </>
+      );
+
+      const sceneMap = {
+        air: chemistryScene,
+        anatomy: anatomyScene,
+        camouflage: camouflageScene,
+        cephalopod: cephalopodScene,
+        chemistry: chemistryScene,
+        energy: chemistryScene,
+        enzyme: proteinScene,
+        fungus: fungusScene,
+        habitat: habitatScene,
+        larva: larvaScene,
+        microbe: microbeScene,
+        mimic: mimicScene,
+        ocean: oceanScene,
+        predator: predatorScene,
+        protein: proteinScene,
+        signal: signalScene,
+        taxonomy: taxonomyScene
+      };
+
+      return (
+        <svg viewBox="0 0 256 180" role="img" aria-label={`${title} explanation illustration`} className="h-full w-full">
+          {commonDefs}
+          <rect x="10" y="10" width="236" height="160" rx="28" fill={`url(#${skyId})`} />
+          <rect x="17" y="17" width="222" height="146" rx="23" fill="#020617" opacity="0.42" />
+          <circle cx="214" cy="38" r="3" fill="#fef08a" />
+          <circle cx="42" cy="42" r="2.5" fill="#67e8f9" />
+          <circle cx="219" cy="108" r="2.2" fill="#bbf7d0" />
+          {sceneMap[visual] || chemistryScene}
+          <rect x="10" y="10" width="236" height="160" rx="28" fill="none" stroke={`url(#${beamId})`} strokeWidth="2.5" opacity="0.75" />
+        </svg>
+      );
+    }
+
+    function ScienceWordDialog({ entry, onClose }) {
+      useEffect(() => {
+        if (!entry) return undefined;
+        const handleKeyDown = (event) => {
+          if (event.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [entry, onClose]);
+
+      if (!entry) return null;
+
+      return (
+        <div className="fixed inset-0 z-[120]" aria-live="polite">
+          <button
+            type="button"
+            aria-label="Close science word explanation"
+            className="absolute inset-0 bg-slate-950/76 backdrop-blur-sm"
+            onClick={onClose}
+          ></button>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${entry.title} science explanation`}
+            className="absolute left-1/2 top-1/2 grid w-[calc(100%-1.25rem)] max-w-4xl max-h-[calc(100vh-1.5rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border border-cyan-300/35 bg-slate-950 shadow-[0_0_70px_rgba(34,211,238,0.22)] md:grid-cols-[0.92fr_1.08fr]"
+          >
+            <div className="relative min-h-[15rem] border-b border-slate-800 bg-slate-900 md:border-b-0 md:border-r">
+              <div className="absolute inset-0 twinkle-bg opacity-25"></div>
+              <ScienceWordIllustration visual={entry.visual} title={entry.title} />
+            </div>
+            <div className="relative overflow-y-auto p-5 sm:p-6 custom-scrollbar">
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 transition-all hover:border-yellow-300 hover:text-yellow-100 active:scale-95"
+                aria-label="Close science word explanation"
+              >
+                <X size={18} />
+              </button>
+              <div className="pr-10">
+                <p className="mb-2 inline-flex rounded-full border border-cyan-300/35 bg-cyan-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-cyan-100">
+                  Science Word
+                </p>
+                <h2 className="text-3xl font-black leading-tight text-white">{entry.title}</h2>
+                {entry.matchedTerm && entry.matchedTerm.toLowerCase() !== entry.title.toLowerCase() && (
+                  <p className="mt-1 text-sm font-bold text-yellow-200">You clicked: {entry.matchedTerm}</p>
+                )}
+              </div>
+              <div className="mt-5 grid gap-3">
+                <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-cyan-100">Kid-friendly meaning</p>
+                  <p className="mt-2 text-sm font-semibold leading-relaxed text-cyan-50">{entry.explanation}</p>
+                </div>
+                <div className="rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-yellow-100">In this glow story</p>
+                  <p className="mt-2 text-sm font-semibold leading-relaxed text-yellow-50">{entry.detail}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      );
+    }
+
+    function FunFactList({ facts = [], renderText }) {
+      if (!facts.length) return null;
+      return (
+        <div className="rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-3">
+          <p className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-yellow-100">
+            <Dna size={13} /> Fun Facts
+          </p>
+          <div className="grid gap-2">
+            {facts.map((fact, index) => (
+              <p key={index} className="rounded-xl border border-slate-800 bg-slate-950/75 px-3 py-2 text-xs font-semibold leading-relaxed text-slate-200">
+                {renderText ? renderText(fact) : fact}
+              </p>
+            ))}
+          </div>
+        </div>
+      );
+    }
 
     function FieldPassportDrawer({
       open,
@@ -3595,7 +4455,12 @@
           category: 'mate',
           source: 'Own lantern chemistry: luciferin, luciferase, oxygen, and ATP.',
           purpose: 'Timed flash messages help males and females find the right species.',
-          difference: 'Fireflies are tiny signal engineers. Their glow is usually a code, not a flashlight for seeing.'
+          difference: 'Fireflies are tiny signal engineers. Their glow is usually a code, not a flashlight for seeing.',
+          funFacts: [
+            'Many firefly larvae glow too, even before they can fly.',
+            'Firefly light is cold light, so very little energy becomes heat.',
+            'Some eggs and pupae can glow faintly while hidden in damp habitat.'
+          ]
         },
         {
           id: 'dinoflagellate',
@@ -3604,7 +4469,12 @@
           category: 'defense',
           source: 'Own chemical reaction that can sparkle when the water is disturbed.',
           purpose: 'A sudden blue flash can startle predators or call attention to the predator.',
-          difference: 'They glow when bumped. Fireflies usually control flashes with a precise courtship rhythm.'
+          difference: 'They glow when bumped. Fireflies usually control flashes with a precise courtship rhythm.',
+          funFacts: [
+            'A single dinoflagellate is one tiny plankton cell drifting with waves.',
+            'Large groups can make breaking waves sparkle blue at night.',
+            'Their flash may make small predators easier for bigger predators to spot.'
+          ]
         },
         {
           id: 'anglerfish',
@@ -3613,7 +4483,12 @@
           category: 'lure',
           source: 'Glowing bacteria live in a lure above the fish mouth.',
           purpose: 'The light dangles like bait to bring prey closer in the dark ocean.',
-          difference: 'Its glow comes from partner bacteria. A firefly makes light inside its own body.'
+          difference: 'Its glow comes from partner bacteria. A firefly makes light inside its own body.',
+          funFacts: [
+            'The glowing lure is part of a fin spine that acts like a fishing pole.',
+            'Many famous deep-sea anglerfish with lures are females.',
+            'The bacteria get a safe home while the fish gets glowing bait.'
+          ]
         },
         {
           id: 'foxfire',
@@ -3622,7 +4497,12 @@
           category: 'spores',
           source: 'Fungal chemistry inside decaying wood.',
           purpose: 'The glow may attract insects that help carry spores to new places.',
-          difference: 'It is a glowing decomposer, not an animal using flashes to talk.'
+          difference: 'It is a glowing decomposer, not an animal using flashes to talk.',
+          funFacts: [
+            'Foxfire is an old nickname for glowing fungus in rotting wood.',
+            'Its glow is steady, more like a dim night-light than a blink.',
+            'Fungi are decomposers, so they help recycle fallen trees.'
+          ]
         },
         {
           id: 'caveglowworm',
@@ -3631,7 +4511,12 @@
           category: 'lure',
           source: 'Larvae glow from a tail-end light organ while sticky silk threads hang like fishing lines.',
           purpose: 'Small insects fly toward the light and get trapped in sticky threads.',
-          difference: 'Despite the name, many cave glowworms are fly larvae, not fireflies.'
+          difference: 'Despite the name, many cave glowworms are fly larvae, not fireflies.',
+          funFacts: [
+            'The sticky silk threads can look like shining bead curtains in caves.',
+            'Hungry larvae often glow brighter to lure more prey.',
+            'They are called worms, but many are actually young flies.'
+          ]
         },
         {
           id: 'jellyfish',
@@ -3640,7 +4525,12 @@
           category: 'defense',
           source: 'Aequorin and green fluorescent protein help create a greenish glow.',
           purpose: 'Glowing or flashing can confuse predators; scientists also learned from its proteins.',
-          difference: 'Its glow helped science discover GFP. Firefly luciferase became a different research tool.'
+          difference: 'Its glow helped science discover GFP. Firefly luciferase became a different research tool.',
+          funFacts: [
+            'Crystal jellies are so clear that you can often see right through them.',
+            'Green fluorescent protein, or GFP, became a famous tool for seeing cells.',
+            'Aequorin helped scientists study tiny calcium messages inside living things.'
+          ]
         },
         {
           id: 'bobtailsquid',
@@ -3649,7 +4539,12 @@
           category: 'defense',
           source: 'Glowing Vibrio bacteria live inside a special light organ.',
           purpose: 'The squid matches moonlight from below so predators have trouble seeing its shadow.',
-          difference: 'It uses partner bacteria for camouflage. Fireflies make their own light for signals.'
+          difference: 'It uses partner bacteria for camouflage. Fireflies make their own light for signals.',
+          funFacts: [
+            'This squid is nocturnal and often buries in sand during the day.',
+            'Its camouflage is called counter-illumination because it matches light from above.',
+            'Young squid invite the right Vibrio bacteria into their light organ.'
+          ]
         },
         {
           id: 'seafirefly',
@@ -3658,7 +4553,12 @@
           category: 'mate',
           source: 'Tiny crustaceans release glowing chemicals into seawater.',
           purpose: 'Males make bright dotted trails that females can follow during courtship.',
-          difference: 'It sends glowing clouds into the water. Fireflies flash from lanterns on their bodies.'
+          difference: 'It sends glowing clouds into the water. Fireflies flash from lanterns on their bodies.',
+          funFacts: [
+            'Sea fireflies are ostracods, tiny crustaceans with clam-like shells.',
+            'Their blue dots can hang in the water like a sparkling trail.',
+            'Some courtship displays are arranged in careful glowing patterns.'
+          ]
         },
         {
           id: 'flashlightfish',
@@ -3667,7 +4567,12 @@
           category: 'lure',
           source: 'Glowing bacteria shine from pockets under the eyes.',
           purpose: 'Blinking light helps find tiny prey and may help the school stay together at night.',
-          difference: 'It can cover and uncover bacterial lights. Fireflies pulse their own chemical lantern.'
+          difference: 'It can cover and uncover bacterial lights. Fireflies pulse their own chemical lantern.',
+          funFacts: [
+            'A flashlight fish can blink by covering its light organ like a shutter.',
+            'The glow comes from bacteria living in pockets under the eyes.',
+            'Groups may use blinking to keep together on dark reefs.'
+          ]
         },
         {
           id: 'railroadworm',
@@ -3676,7 +4581,12 @@
           category: 'defense',
           source: 'Rows of green lights and a red head light come from its own chemistry.',
           purpose: 'The warning glow tells predators this larva is not an easy snack.',
-          difference: 'It is a beetle relative with warning lights, while adult fireflies usually flash to find mates.'
+          difference: 'It is a beetle relative with warning lights, while adult fireflies usually flash to find mates.',
+          funFacts: [
+            'Railroad worms can show green lights along the body and a reddish head light.',
+            'The warning glow is defensive, like a tiny living caution sign.',
+            'They are beetle relatives, so they belong near fireflies on the insect family tree.'
+          ]
         },
         {
           id: 'vampiresquid',
@@ -3685,7 +4595,12 @@
           category: 'defense',
           source: 'Light organs and glowing mucus packets create blue flashes in the deep sea.',
           purpose: 'A sticky glowing cloud can distract predators while the squid escapes.',
-          difference: 'It throws light outward as a decoy. Fireflies keep the light source on their abdomen.'
+          difference: 'It throws light outward as a decoy. Fireflies keep the light source on their abdomen.',
+          funFacts: [
+            'The vampire squid is a cephalopod, more like a squid-octopus cousin than a scary monster.',
+            'Its arm web can fold around it like a dark cloak.',
+            'Tiny photophores help it sparkle or confuse predators in deep water.'
+          ]
         },
         {
           id: 'jackolantern',
@@ -3694,7 +4609,12 @@
           category: 'spores',
           source: 'Fungal luciferin chemistry makes the gills glow greenish at night.',
           purpose: 'The glow may draw insects that brush against the mushroom and move spores around.',
-          difference: 'It glows as a fungus spreading spores, not as an insect sending flash messages.'
+          difference: 'It glows as a fungus spreading spores, not as an insect sending flash messages.',
+          funFacts: [
+            'The brightest glow is usually on the mushroom gills underneath the cap.',
+            'It may look magical, but this mushroom is toxic and should not be eaten.',
+            'Its spores are tiny travelers that can start new fungal growth.'
+          ]
         }
       ];
 
@@ -3718,23 +4638,39 @@
           Object.keys(value.assignments).every(orgId => organismIds.includes(orgId) && zoneIds.includes(value.assignments[orgId]))
         ))
       });
+      const [activeScienceTerm, setActiveScienceTerm] = useState(null);
       const setHallField = useNotebookField(setHallNotebook);
       const { selectedId, assignments } = hallNotebook;
       const setSelectedId = (nextId) => setHallField('selectedId', nextId);
 
       const selected = organisms.find(org => org.id === selectedId) || organisms[0];
+      const findNextUnassignedId = (currentId, nextAssignments) => {
+        const currentIndex = organisms.findIndex(org => org.id === currentId);
+        const startIndex = currentIndex >= 0 ? currentIndex + 1 : 0;
+        const searchOrder = [
+          ...organisms.slice(startIndex),
+          ...organisms.slice(0, Math.max(startIndex - 1, 0))
+        ];
+        return searchOrder.find(org => !nextAssignments[org.id])?.id || currentId;
+      };
       const correctCount = organisms.filter(org => assignments[org.id] === org.category).length;
       const assignedCount = Object.keys(assignments).length;
       const isComplete = correctCount === organisms.length;
+      const selectedAssignment = assignments[selected.id];
+      const selectedIsCorrect = selectedAssignment === selected.category;
+      const selectedHasWrongAnswer = Boolean(selectedAssignment && !selectedIsCorrect);
 
       const assignSelected = (zoneId) => {
+        if (!zoneIds.includes(zoneId)) return;
         setHallNotebook(prev => {
-          const nextAssignments = { ...prev.assignments, [prev.selectedId]: zoneId };
-          const nextUnassigned = organisms.find(org => org.id !== prev.selectedId && !nextAssignments[org.id]);
+          const activeId = organismIds.includes(prev.selectedId) ? prev.selectedId : selected.id;
+          const activeOrganism = organisms.find(org => org.id === activeId) || selected;
+          const nextAssignments = { ...prev.assignments, [activeId]: zoneId };
+          const shouldAdvance = zoneId === activeOrganism.category;
           return {
             ...prev,
             assignments: nextAssignments,
-            selectedId: nextUnassigned ? nextUnassigned.id : prev.selectedId
+            selectedId: shouldAdvance ? findNextUnassignedId(activeId, nextAssignments) : activeId
           };
         });
       };
@@ -3745,6 +4681,7 @@
 
       const zoneForSelected = zones.find(zone => zone.id === selected.category);
       const selectedGlowFact = GLOW_HALL_GLOW_FACTS[selected.id] || GLOW_HALL_GLOW_FACTS.firefly;
+      const renderHallText = (text) => renderScienceText(text, setActiveScienceTerm);
 
       useEffect(() => {
         onProgress?.({
@@ -3753,18 +4690,21 @@
           label: `${correctCount}/${organisms.length} glow cases sorted`,
           nudge: isComplete
             ? 'The hall is curated. Move on to meet real firefly species.'
-            : assignments[selectedId]
+            : selectedHasWrongAnswer
+              ? `${selected.name} is not in that case yet. Try another glow purpose.`
+              : selectedAssignment
               ? `${selected.name} is filed. Pick another organism or adjust the case.`
               : `Decide why ${selected.name} glows, then choose the matching purpose case.`,
           steps: [
             { label: 'Pick an organism', status: selectedId ? 'done' : 'active' },
-            { label: 'Choose its glow purpose', status: assignments[selectedId] ? 'done' : 'active' },
+            { label: 'Choose its glow purpose', status: selectedIsCorrect ? 'done' : 'active' },
             { label: 'Sort every organism into a case', status: isComplete ? 'done' : assignedCount ? 'active' : 'locked' }
           ]
         });
-      }, [correctCount, assignedCount, isComplete, selectedId, selected.name, assignments[selectedId], onProgress]);
+      }, [correctCount, assignedCount, isComplete, selectedId, selected.id, selected.name, selectedAssignment, selectedHasWrongAnswer, selectedIsCorrect, onProgress]);
 
       return (
+        <>
         <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0">
           <div className="text-center shrink-0 mb-5">
             <h2 className="text-3xl sm:text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-yellow-300 to-green-300">
@@ -3797,9 +4737,12 @@
                   const isSelected = selectedId === org.id;
                   return (
                     <button
+                      type="button"
                       key={org.id}
                       onClick={() => setSelectedId(org.id)}
-                      className={`relative min-h-[132px] rounded-3xl border-2 p-3 text-left transition-all overflow-hidden ${isSelected ? 'bg-yellow-400 text-slate-950 border-white shadow-[0_0_26px_rgba(250,204,21,0.5)] scale-[1.03]' : isCorrect ? 'bg-green-950/80 border-green-400 text-green-100' : isWrong ? 'bg-red-950/80 border-red-400 text-red-100' : 'bg-slate-900/85 border-slate-700 text-slate-100 hover:border-cyan-300'}`}
+                      aria-pressed={isSelected}
+                      data-glow-organism-id={org.id}
+                      className={`relative min-h-[132px] rounded-3xl border-2 p-3 text-left transition-all overflow-hidden touch-manipulation ${isSelected ? 'bg-yellow-400 text-slate-950 border-white shadow-[0_0_26px_rgba(250,204,21,0.5)] scale-[1.03]' : isCorrect ? 'bg-green-950/80 border-green-400 text-green-100' : isWrong ? 'bg-red-950/80 border-red-400 text-red-100' : 'bg-slate-900/85 border-slate-700 text-slate-100 hover:border-cyan-300'}`}
                     >
                       <div className="absolute -right-7 -bottom-8 z-0 h-28 w-28 opacity-25 pointer-events-none">
                         <GlowOrganismSvg organism={org} className="h-full w-full" muted />
@@ -3836,7 +4779,7 @@
                   <div className="flex-1 min-w-0">
                     <span className="text-xs text-slate-500 uppercase tracking-wider font-black">Now Studying</span>
                     <h3 className="text-2xl font-black text-white leading-tight">{selected.name}</h3>
-                    <p className="text-sm text-cyan-300 font-bold">{selected.group}</p>
+                    <p className="text-sm text-cyan-300 font-bold">{renderHallText(selected.group)}</p>
                   </div>
                 </div>
 
@@ -3845,16 +4788,17 @@
                     <div className="grid grid-cols-1 gap-3">
                       <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3">
                         <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider mb-1">Glow Source</p>
-                        <p className="text-xs text-slate-300 leading-relaxed">{selected.source}</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">{renderHallText(selected.source)}</p>
                       </div>
                       <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3">
                         <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider mb-1">Why It Glows</p>
-                        <p className="text-xs text-slate-300 leading-relaxed">{selected.purpose}</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">{renderHallText(selected.purpose)}</p>
                       </div>
                       <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3">
                         <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider mb-1">Firefly Difference</p>
-                        <p className="text-xs text-slate-300 leading-relaxed">{selected.difference}</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">{renderHallText(selected.difference)}</p>
                       </div>
+                      <FunFactList facts={selected.funFacts} renderText={renderHallText} />
                     </div>
                   </div>
 
@@ -3866,10 +4810,10 @@
                     </div>
                     <div className="rounded-2xl border border-slate-700 bg-slate-950/90 p-3">
                       <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider">Glowing Part</p>
-                      <p className="text-xs text-slate-200 font-bold mt-1">{selectedGlowFact.part}</p>
+                      <p className="text-xs text-slate-200 font-bold mt-1">{renderHallText(selectedGlowFact.part)}</p>
                       <div className="mt-2 grid grid-cols-1 gap-1 text-[11px] text-slate-300 leading-snug">
-                        <p><strong className="text-cyan-300">Color:</strong> {selectedGlowFact.color}</p>
-                        <p><strong className="text-yellow-300">Rhythm:</strong> {selectedGlowFact.rhythm}</p>
+                        <p><strong className="text-cyan-300">Color:</strong> {renderHallText(selectedGlowFact.color)}</p>
+                        <p><strong className="text-yellow-300">Rhythm:</strong> {renderHallText(selectedGlowFact.rhythm)}</p>
                       </div>
                     </div>
                   </div>
@@ -3882,9 +4826,12 @@
                   const alreadyPicked = assignments[selected.id] === zone.id;
                   return (
                     <button
+                      type="button"
                       key={zone.id}
                       onClick={() => assignSelected(zone.id)}
-                      className={`min-h-[128px] rounded-3xl border-2 p-4 text-left transition-all ${alreadyPicked ? zone.color + ' shadow-[0_0_20px_rgba(255,255,255,0.12)]' : 'bg-slate-900 border-slate-700 hover:border-yellow-300 text-slate-200'} ${isCorrectTarget && isComplete ? 'ring-2 ring-green-300' : ''}`}
+                      aria-pressed={alreadyPicked}
+                      data-glow-zone-id={zone.id}
+                      className={`min-h-[128px] rounded-3xl border-2 p-4 text-left transition-all touch-manipulation ${alreadyPicked ? zone.color + ' shadow-[0_0_20px_rgba(255,255,255,0.12)]' : 'bg-slate-900 border-slate-700 hover:border-yellow-300 text-slate-200'} ${isCorrectTarget && isComplete ? 'ring-2 ring-green-300' : ''}`}
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-700">{zone.icon}</div>
@@ -3912,6 +4859,8 @@
             </div>
           </div>
         </div>
+        <ScienceWordDialog entry={activeScienceTerm} onClose={() => setActiveScienceTerm(null)} />
+        </>
       );
     }
 
@@ -3919,19 +4868,174 @@
     function StageSpecies({ onComplete, onEarn, onProgress }) {
       const [activeSpecies, setActiveSpecies] = useState(null);
       const [visitedSpeciesIds, setVisitedSpeciesIds] = useSessionArray('firefly-academy-session-species-studied', []);
+      const [activeScienceTerm, setActiveScienceTerm] = useState(null);
 
       const speciesList = [
-        { id: 'congaree', name: 'Snappy Single Sync', scientific: 'Photuris frontalis', location: 'Congaree, USA', color: 'bg-yellow-300', description: "Congaree National Park's synchronous firefly. Males fly low over old-growth bottomland forest and swamp edges, throwing quick single flashes about every 0.65 seconds.", animClass: 'animate-snappy', bugColor: 'text-yellow-300' },
-        { id: 'smoky', name: 'Smoky Mountain Sync', scientific: 'Photinus carolinus', location: 'Appalachians, USA', color: 'bg-orange-400', description: 'Found in mature Appalachian hardwood forests. Males flash 5-8 yellow pulses together, followed by about 8-10 seconds of darkness before the whole group starts again.', animClass: 'animate-smoky', bugColor: 'text-orange-400' },
-        { id: 'dipper', name: 'Big Dipper Firefly', scientific: 'Photinus pyralis', location: 'Eastern & Central USA', color: 'bg-yellow-400', description: 'The classic backyard lightning bug. Males make one sustained yellow J-shaped flash roughly every 5-7 seconds while flying upward over lawns, fields, and open woods.', animClass: 'animate-dipper', bugColor: 'text-yellow-400' },
-        { id: 'ghost', name: 'Blue Ghost', scientific: 'Phausis reticulata', location: 'Appalachians, USA', color: 'bg-cyan-400', description: 'A tiny southern Appalachian firefly whose males drift close to the forest floor with a steady blue-green glow instead of blinking. Females stay wingless and glow from the leaf litter.', animClass: 'animate-ghost', bugColor: 'text-cyan-400' },
-        { id: 'winter', name: 'Winter Firefly', scientific: 'Photinus corruscus', location: 'Eastern North America', color: 'bg-slate-300', description: 'A lanternless daytime firefly, still often seen under its older name Ellychnia corrusca. Adults overwinter on tree trunks and find mates by pheromones rather than light.', animClass: 'animate-no-flash', bugColor: 'text-slate-300' },
-        { id: 'treetop', name: 'Spring Tree-Top Flasher', scientific: 'Pyractomena borealis', location: 'Eastern USA', color: 'bg-amber-400', description: 'Often one of the first flashing fireflies of spring. Males cruise high in the tree canopy, sending one short amber flash about every 2-3 seconds.', animClass: 'animate-treetop', bugColor: 'text-amber-400' },
-        { id: 'genji', name: 'Genji-botaru', scientific: 'Luciola cruciata', location: 'Japan', color: 'bg-green-400', description: 'A culturally revered Japanese firefly with aquatic larvae. Mate-seeking males are known for regional flash intervals: about 2 seconds in western Japan and 4 seconds in eastern Japan.', animClass: 'animate-genji', bugColor: 'text-green-400' },
-        { id: 'mangrove', name: 'Mangrove Sync', scientific: 'Pteroptyx tener', location: 'Malaysia', color: 'bg-yellow-300', description: 'A Southeast Asian mangrove firefly. Males gather on riverside Berembang trees and flash in tight synchrony, with Selangor River displays reported near 3.7 flashes per second.', animClass: 'animate-mangrove', bugColor: 'text-yellow-300' },
-        { id: 'giant', name: 'Giant Glowworm', scientific: 'Lamprigera spp.', location: 'Southeast Asia', color: 'bg-emerald-400', description: 'A glow-worm style firefly. Large, flightless females emit continuous green light rather than crisp flashes, often combining glow signals with chemical cues.', animClass: 'animate-giant', bugColor: 'text-emerald-400' },
-        { id: 'desert', name: 'Southwest Sync', scientific: 'Photinus knulli', location: 'Arizona, USA', color: 'bg-yellow-200', description: 'An arid anomaly from desert riparian zones in southeastern Arizona. Adults emerge after monsoon rains, and males may synchronize quick triplet flashes in lek displays.', animClass: 'animate-desert', bugColor: 'text-yellow-200' },
-        { id: 'femme', name: 'Femme Fatale', scientific: 'Photuris versicolor complex', location: 'USA', color: 'bg-lime-200', description: 'A predatory mimic! Photuris signals are white to greenish, and females can copy the reply flashes of other species to lure in males, then consume them and steal defensive chemicals.', animClass: 'animate-predator', bugColor: 'text-lime-200' }
+        {
+          id: 'congaree',
+          name: 'Snappy Single Sync',
+          scientific: 'Photuris frontalis',
+          location: 'Congaree, USA',
+          color: 'bg-yellow-300',
+          description: "Congaree National Park's synchronous firefly. Males fly low over old-growth bottomland forest and swamp edges, throwing quick single flashes about every 0.65 seconds.",
+          funFacts: [
+            'Females usually wait low in the plants and answer males with their own tiny flash.',
+            'The wet bottomland habitat helps larvae find small prey in leaf litter.',
+            'The short interval between flashes makes this species look extra snappy.'
+          ],
+          animClass: 'animate-snappy',
+          bugColor: 'text-yellow-300'
+        },
+        {
+          id: 'smoky',
+          name: 'Smoky Mountain Sync',
+          scientific: 'Photinus carolinus',
+          location: 'Appalachians, USA',
+          color: 'bg-orange-400',
+          description: 'Found in mature Appalachian hardwood forests. Males flash 5-8 yellow pulses together, followed by about 8-10 seconds of darkness before the whole group starts again.',
+          funFacts: [
+            'Their synchrony is easier to see when nights are dark and calm.',
+            'Females often answer from vegetation while males fly and flash above them.',
+            'The quiet dark pause is part of the signal, not a mistake.'
+          ],
+          animClass: 'animate-smoky',
+          bugColor: 'text-orange-400'
+        },
+        {
+          id: 'dipper',
+          name: 'Big Dipper Firefly',
+          scientific: 'Photinus pyralis',
+          location: 'Eastern & Central USA',
+          color: 'bg-yellow-400',
+          description: 'The classic backyard lightning bug. Males make one sustained yellow J-shaped flash roughly every 5-7 seconds while flying upward over lawns, fields, and open woods.',
+          funFacts: [
+            'Its J-shaped flash is one of the easiest firefly signals for beginners to notice.',
+            'Larvae hunt soft prey such as snails, slugs, and small worms near the ground.',
+            'This species often appears in yards, meadows, and open woodland edges.'
+          ],
+          animClass: 'animate-dipper',
+          bugColor: 'text-yellow-400'
+        },
+        {
+          id: 'ghost',
+          name: 'Blue Ghost',
+          scientific: 'Phausis reticulata',
+          location: 'Appalachians, USA',
+          color: 'bg-cyan-400',
+          description: 'A tiny southern Appalachian firefly whose males drift close to the forest floor with a steady blue-green glow instead of blinking. Females stay wingless and glow from the leaf litter.',
+          funFacts: [
+            'The glow looks ghostly because it is steady and low to the forest floor.',
+            'Wingless females can look larval even when they are adults.',
+            'Moist leaf litter is important habitat for this quiet forest species.'
+          ],
+          animClass: 'animate-ghost',
+          bugColor: 'text-cyan-400'
+        },
+        {
+          id: 'winter',
+          name: 'Winter Firefly',
+          scientific: 'Photinus corruscus',
+          location: 'Eastern North America',
+          color: 'bg-slate-300',
+          description: 'A lanternless daytime firefly, still often seen under its older name Ellychnia corrusca. Adults overwinter on tree trunks and find mates by pheromones rather than light.',
+          funFacts: [
+            'Adults can be spotted on sunny tree trunks before many other insects are active.',
+            'Pheromones help them find mates even without bright flash signals.',
+            'Overwintering adults hide in cold months, then become active as days warm.'
+          ],
+          animClass: 'animate-no-flash',
+          bugColor: 'text-slate-300'
+        },
+        {
+          id: 'treetop',
+          name: 'Spring Tree-Top Flasher',
+          scientific: 'Pyractomena borealis',
+          location: 'Eastern USA',
+          color: 'bg-amber-400',
+          description: 'Often one of the first flashing fireflies of spring. Males cruise high in the tree canopy, sending one short amber flash about every 2-3 seconds.',
+          funFacts: [
+            'Looking upward can help you spot this canopy flasher.',
+            'Some Pyractomena larvae climb tree trunks instead of staying only on the soil.',
+            'Early-season flashes can appear before summer fireflies take over the night.'
+          ],
+          animClass: 'animate-treetop',
+          bugColor: 'text-amber-400'
+        },
+        {
+          id: 'genji',
+          name: 'Genji-botaru',
+          scientific: 'Luciola cruciata',
+          location: 'Japan',
+          color: 'bg-green-400',
+          description: 'A culturally revered Japanese firefly with aquatic larvae. Mate-seeking males are known for regional flash intervals: about 2 seconds in western Japan and 4 seconds in eastern Japan.',
+          funFacts: [
+            'Aquatic larvae need clean streams with enough small snails to eat.',
+            'Regional flash intervals help scientists compare local populations.',
+            'Genji-botaru displays are celebrated in parts of Japanese culture.'
+          ],
+          animClass: 'animate-genji',
+          bugColor: 'text-green-400'
+        },
+        {
+          id: 'mangrove',
+          name: 'Mangrove Sync',
+          scientific: 'Pteroptyx tener',
+          location: 'Malaysia',
+          color: 'bg-yellow-300',
+          description: 'A Southeast Asian mangrove firefly. Males gather on riverside Berembang trees and flash in tight synchrony, with Selangor River displays reported near 3.7 flashes per second.',
+          funFacts: [
+            'Mangrove habitat mixes river water, tides, trees, and muddy banks.',
+            'A whole tree can appear to twinkle when many males flash together.',
+            'Healthy riverside vegetation gives adults display sites and larvae damp shelter.'
+          ],
+          animClass: 'animate-mangrove',
+          bugColor: 'text-yellow-300'
+        },
+        {
+          id: 'giant',
+          name: 'Giant Glowworm',
+          scientific: 'Lamprigera spp.',
+          location: 'Southeast Asia',
+          color: 'bg-emerald-400',
+          description: 'A glow-worm style firefly. Large, flightless females emit continuous green light rather than crisp flashes, often combining glow signals with chemical cues.',
+          funFacts: [
+            'Large females can glow like bright green beads on the forest floor.',
+            'Smaller flying males search for the flightless females.',
+            'Chemical cues may work together with light to guide mates.'
+          ],
+          animClass: 'animate-giant',
+          bugColor: 'text-emerald-400'
+        },
+        {
+          id: 'desert',
+          name: 'Southwest Sync',
+          scientific: 'Photinus knulli',
+          location: 'Arizona, USA',
+          color: 'bg-yellow-200',
+          description: 'An arid anomaly from desert riparian zones in southeastern Arizona. Adults emerge after monsoon rains, and males may synchronize quick triplet flashes in lek displays.',
+          funFacts: [
+            'Riparian canyon pockets can stay damp inside a much drier desert landscape.',
+            'Monsoon rain helps trigger the short adult season.',
+            'A lek lets many males display in the same area while females choose.'
+          ],
+          animClass: 'animate-desert',
+          bugColor: 'text-yellow-200'
+        },
+        {
+          id: 'femme',
+          name: 'Femme Fatale',
+          scientific: 'Photuris versicolor complex',
+          location: 'USA',
+          color: 'bg-lime-200',
+          description: 'A predatory mimic! Photuris signals are white to greenish, and females can copy the reply flashes of other species to lure in males, then consume them and steal defensive chemicals.',
+          funFacts: [
+            'A Photuris female can mimic another species well enough to fool a male.',
+            'The stolen defensive chemicals can help protect her and her eggs.',
+            'Photuris fireflies are sometimes called firefly specialists because they can hunt other fireflies.'
+          ],
+          animClass: 'animate-predator',
+          bugColor: 'text-lime-200'
+        }
       ];
 
       const synchronizedSpecies = new Set(['congaree', 'smoky', 'mangrove']);
@@ -3963,6 +5067,7 @@
         setActiveSpecies(species);
         setVisitedSpeciesIds(prev => prev.includes(species.id) ? prev : [...prev, species.id]);
       };
+      const renderSpeciesText = (text) => renderScienceText(text, setActiveScienceTerm);
 
       const getPreviewCount = (species) => {
         if (species.id === 'giant') return 1;
@@ -3993,12 +5098,13 @@
       };
 
       return (
+        <>
         <div className="flex flex-col space-y-4 animate-in slide-in-from-right duration-500 h-full min-h-0">
           <div className="flex flex-col sm:flex-row gap-4 items-center bg-blue-900/20 border border-blue-900/50 p-4 rounded-2xl shrink-0">
             <Globe className="text-blue-400 shrink-0" size={36} />
             <div className="flex-1">
               <h3 className="font-bold text-blue-300">Signature Species</h3>
-              <p className="text-sm text-slate-300">Start with standout fireflies found in the USA, then compare them with global species. Flash rhythms, colors, habitats, and even whether adults glow at all can vary wildly.</p>
+              <p className="text-sm text-slate-300">{renderSpeciesText('Start with standout fireflies found in the USA, then compare them with global species. Flash rhythms, colors, habitats, and even whether adults glow at all can vary wildly.')}</p>
             </div>
             <div className={`px-4 py-2 rounded-full border font-black text-sm shrink-0 ${speciesComplete ? 'bg-green-400 text-slate-950 border-green-200' : 'bg-slate-900 text-yellow-300 border-slate-700'}`}>
               {visitedSpeciesIds.length}/{speciesList.length} studied
@@ -4050,8 +5156,11 @@
                   
                   <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
                     <h3 className={`text-xl sm:text-2xl font-black mb-1 ${activeSpecies.bugColor}`}>{activeSpecies.name}</h3>
-                    <p className="text-sm text-slate-400 italic mb-3">{activeSpecies.scientific}</p>
-                    <p className="text-slate-300 text-sm leading-relaxed bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">{activeSpecies.description}</p>
+                    <p className="text-sm text-slate-400 italic mb-3">{renderSpeciesText(activeSpecies.scientific)}</p>
+                    <p className="text-slate-300 text-sm leading-relaxed bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">{renderSpeciesText(activeSpecies.description)}</p>
+                    <div className="mt-3">
+                      <FunFactList facts={activeSpecies.funFacts} renderText={renderSpeciesText} />
+                    </div>
                   </div>
                 </>
               ) : (
@@ -4073,6 +5182,8 @@
             </button>
           </div>
         </div>
+        <ScienceWordDialog entry={activeScienceTerm} onClose={() => setActiveScienceTerm(null)} />
+        </>
       );
     }
 
@@ -4319,14 +5430,116 @@
       const usVisitedCount = usLocations.filter(loc => visitedIds.includes(loc.id)).length;
       const globalVisitedCount = globalLocations.filter(loc => visitedIds.includes(loc.id)).length;
       const atlasComplete = totalVisitedCount === allLocations.length;
-      const sparklePositions = [
-        { left: 18, top: 42, delay: 0 },
-        { left: 38, top: 28, delay: 0.35 },
-        { left: 58, top: 46, delay: 0.7 },
-        { left: 76, top: 34, delay: 1.05 },
-        { left: 31, top: 66, delay: 1.4 },
-        { left: 66, top: 72, delay: 1.75 }
-      ];
+      const atlasScenePalettes = {
+        congaree: { sky: '#061724', horizon: '#064e3b', ground: '#042f2e', water: '#0e7490', fog: '#a7f3d0', glow: '#fde047' },
+        smoky: { sky: '#070b1f', horizon: '#312e81', ground: '#052e16', water: '#1d4ed8', fog: '#c7d2fe', glow: '#fb923c' },
+        allegheny: { sky: '#071426', horizon: '#14532d', ground: '#052e16', water: '#0f766e', fog: '#bbf7d0', glow: '#bef264' },
+        grandfather: { sky: '#061627', horizon: '#155e75', ground: '#052e16', water: '#0891b2', fog: '#bae6fd', glow: '#67e8f9' },
+        highbridge: { sky: '#07162a', horizon: '#1e3a8a', ground: '#064e3b', water: '#0ea5e9', fog: '#bfdbfe', glow: '#fde047' },
+        arizona: { sky: '#1f140b', horizon: '#7c2d12', ground: '#431407', water: '#0e7490', fog: '#fed7aa', glow: '#fef08a' },
+        mexico: { sky: '#061724', horizon: '#14532d', ground: '#052e16', water: '#0f766e', fog: '#bbf7d0', glow: '#86efac' },
+        japan: { sky: '#06162a', horizon: '#115e59', ground: '#052e2b', water: '#0ea5e9', fog: '#a7f3d0', glow: '#4ade80' },
+        malaysia: { sky: '#031a2a', horizon: '#064e3b', ground: '#042f2e', water: '#0e7490', fog: '#bae6fd', glow: '#fde047' },
+        italy: { sky: '#101624', horizon: '#365314', ground: '#1a2e05', water: '#0f766e', fog: '#fef3c7', glow: '#fbbf24' },
+        brazil: { sky: '#17110b', horizon: '#713f12', ground: '#422006', water: '#0f766e', fog: '#fde68a', glow: '#bef264' }
+      };
+      const atlasSignalPoints = {
+        congaree: [
+          { x: 18, y: 67, size: 11, anim: 'atlas-single-sync', delay: 0 },
+          { x: 27, y: 71, size: 9, anim: 'atlas-single-sync', delay: 0.06 },
+          { x: 38, y: 63, size: 10, anim: 'atlas-single-sync', delay: 0 },
+          { x: 48, y: 69, size: 8, anim: 'atlas-single-sync', delay: 0.08 },
+          { x: 60, y: 62, size: 12, anim: 'atlas-single-sync', delay: 0 },
+          { x: 72, y: 68, size: 9, anim: 'atlas-single-sync', delay: 0.06 },
+          { x: 84, y: 64, size: 10, anim: 'atlas-single-sync', delay: 0.12 }
+        ],
+        smoky: [
+          { x: 18, y: 47, size: 10, anim: 'atlas-burst-pause', delay: 0 },
+          { x: 27, y: 56, size: 8, anim: 'atlas-burst-pause', delay: 0 },
+          { x: 37, y: 51, size: 12, anim: 'atlas-burst-pause', delay: 0 },
+          { x: 49, y: 60, size: 9, anim: 'atlas-burst-pause', delay: 0 },
+          { x: 61, y: 50, size: 11, anim: 'atlas-burst-pause', delay: 0 },
+          { x: 72, y: 58, size: 8, anim: 'atlas-burst-pause', delay: 0 },
+          { x: 83, y: 52, size: 10, anim: 'atlas-burst-pause', delay: 0 }
+        ],
+        allegheny: [
+          { x: 21, y: 49, size: 8, anim: 'atlas-burst-pause', delay: 0.2, color: '#fef08a' },
+          { x: 32, y: 58, size: 9, anim: 'atlas-burst-pause', delay: 0.2, color: '#fef08a' },
+          { x: 46, y: 45, size: 7, anim: 'atlas-mound-glow', delay: 0.5, color: '#bef264' },
+          { x: 58, y: 55, size: 10, anim: 'atlas-burst-pause', delay: 0.2, color: '#fef08a' },
+          { x: 70, y: 43, size: 8, anim: 'atlas-mound-glow', delay: 1.1, color: '#bef264' },
+          { x: 81, y: 59, size: 8, anim: 'atlas-burst-pause', delay: 0.2, color: '#fef08a' }
+        ],
+        grandfather: [
+          { x: 20, y: 72, size: 9, anim: 'atlas-blue-ghost', delay: 0, color: '#67e8f9' },
+          { x: 32, y: 77, size: 7, anim: 'atlas-blue-ghost', delay: 1.2, color: '#a5f3fc' },
+          { x: 44, y: 70, size: 8, anim: 'atlas-blue-ghost', delay: 2.4, color: '#67e8f9' },
+          { x: 54, y: 50, size: 9, anim: 'atlas-burst-pause', delay: 0, color: '#fb923c' },
+          { x: 65, y: 44, size: 8, anim: 'atlas-burst-pause', delay: 0, color: '#fb923c' },
+          { x: 76, y: 56, size: 10, anim: 'atlas-burst-pause', delay: 0, color: '#fb923c' },
+          { x: 86, y: 47, size: 8, anim: 'atlas-burst-pause', delay: 0, color: '#fb923c' }
+        ],
+        highbridge: [
+          { x: 18, y: 76, size: 8, anim: 'atlas-burst-pause', delay: 0, color: '#fde047' },
+          { x: 30, y: 70, size: 10, anim: 'atlas-burst-pause', delay: 0, color: '#fde047' },
+          { x: 42, y: 79, size: 8, anim: 'atlas-burst-pause', delay: 0, color: '#fde047' },
+          { x: 55, y: 68, size: 9, anim: 'atlas-burst-pause', delay: 0, color: '#fde047' },
+          { x: 69, y: 76, size: 11, anim: 'atlas-burst-pause', delay: 0, color: '#fde047' },
+          { x: 82, y: 71, size: 8, anim: 'atlas-burst-pause', delay: 0, color: '#fde047' }
+        ],
+        arizona: [
+          { x: 22, y: 68, size: 9, anim: 'atlas-triplet', delay: 0, color: '#fef08a' },
+          { x: 32, y: 64, size: 8, anim: 'atlas-triplet', delay: 0.08, color: '#fef08a' },
+          { x: 45, y: 69, size: 10, anim: 'atlas-triplet', delay: 0, color: '#fef08a' },
+          { x: 56, y: 61, size: 8, anim: 'atlas-triplet', delay: 0.08, color: '#fef08a' },
+          { x: 70, y: 67, size: 9, anim: 'atlas-triplet', delay: 0, color: '#fef08a' },
+          { x: 82, y: 63, size: 8, anim: 'atlas-triplet', delay: 0.08, color: '#fef08a' }
+        ],
+        mexico: [
+          { x: 17, y: 55, size: 9, anim: 'atlas-burst-pause', delay: 0.05, color: '#86efac' },
+          { x: 28, y: 47, size: 11, anim: 'atlas-burst-pause', delay: 0.18, color: '#bbf7d0' },
+          { x: 39, y: 58, size: 8, anim: 'atlas-burst-pause', delay: 0.31, color: '#86efac' },
+          { x: 52, y: 48, size: 10, anim: 'atlas-burst-pause', delay: 0.44, color: '#bbf7d0' },
+          { x: 64, y: 59, size: 9, anim: 'atlas-burst-pause', delay: 0.57, color: '#86efac' },
+          { x: 77, y: 50, size: 11, anim: 'atlas-burst-pause', delay: 0.7, color: '#bbf7d0' },
+          { x: 88, y: 60, size: 8, anim: 'atlas-burst-pause', delay: 0.83, color: '#86efac' }
+        ],
+        japan: [
+          { x: 19, y: 66, size: 9, anim: 'atlas-river-pulse', delay: 0, color: '#4ade80' },
+          { x: 29, y: 72, size: 8, anim: 'atlas-river-pulse', delay: 0.25, color: '#86efac' },
+          { x: 42, y: 64, size: 10, anim: 'atlas-river-pulse', delay: 0.5, color: '#4ade80' },
+          { x: 55, y: 70, size: 8, anim: 'atlas-river-pulse', delay: 0.75, color: '#86efac' },
+          { x: 68, y: 62, size: 10, anim: 'atlas-river-pulse', delay: 1, color: '#4ade80' },
+          { x: 81, y: 69, size: 8, anim: 'atlas-river-pulse', delay: 1.25, color: '#86efac' }
+        ],
+        malaysia: [
+          { x: 18, y: 41, size: 8, anim: 'atlas-mangrove-clock', delay: 0, color: '#fde047' },
+          { x: 24, y: 50, size: 7, anim: 'atlas-mangrove-clock', delay: 0, color: '#fef08a' },
+          { x: 32, y: 44, size: 8, anim: 'atlas-mangrove-clock', delay: 0, color: '#fde047' },
+          { x: 45, y: 49, size: 7, anim: 'atlas-mangrove-clock', delay: 0, color: '#fef08a' },
+          { x: 56, y: 42, size: 9, anim: 'atlas-mangrove-clock', delay: 0, color: '#fde047' },
+          { x: 63, y: 53, size: 7, anim: 'atlas-mangrove-clock', delay: 0, color: '#fef08a' },
+          { x: 74, y: 45, size: 8, anim: 'atlas-mangrove-clock', delay: 0, color: '#fde047' },
+          { x: 82, y: 53, size: 7, anim: 'atlas-mangrove-clock', delay: 0, color: '#fef08a' }
+        ],
+        italy: [
+          { x: 19, y: 62, size: 8, anim: 'atlas-meadow-flash', delay: 0, color: '#fbbf24' },
+          { x: 31, y: 70, size: 7, anim: 'atlas-meadow-flash', delay: 0.08, color: '#fde68a' },
+          { x: 42, y: 58, size: 9, anim: 'atlas-meadow-flash', delay: 0.16, color: '#fbbf24' },
+          { x: 54, y: 67, size: 8, anim: 'atlas-meadow-flash', delay: 0.24, color: '#fde68a' },
+          { x: 67, y: 57, size: 9, anim: 'atlas-meadow-flash', delay: 0.32, color: '#fbbf24' },
+          { x: 80, y: 66, size: 7, anim: 'atlas-meadow-flash', delay: 0.4, color: '#fde68a' }
+        ],
+        brazil: [
+          { x: 28, y: 61, size: 7, anim: 'atlas-mound-glow', delay: 0, color: '#bef264' },
+          { x: 32, y: 72, size: 8, anim: 'atlas-mound-glow', delay: 0.4, color: '#d9f99d' },
+          { x: 45, y: 55, size: 7, anim: 'atlas-mound-glow', delay: 0.7, color: '#bef264' },
+          { x: 50, y: 66, size: 9, anim: 'atlas-mound-glow', delay: 1.1, color: '#d9f99d' },
+          { x: 61, y: 58, size: 7, anim: 'atlas-mound-glow', delay: 1.5, color: '#bef264' },
+          { x: 67, y: 72, size: 8, anim: 'atlas-mound-glow', delay: 1.9, color: '#d9f99d' },
+          { x: 79, y: 62, size: 7, anim: 'atlas-mound-glow', delay: 2.3, color: '#bef264' }
+        ]
+      };
 
       const pulsePassportStamp = (locationId) => {
         window.clearTimeout(stampTimerRef.current);
@@ -4401,84 +5614,278 @@
         return () => window.clearTimeout(stampTimerRef.current);
       }, []);
 
+      const getAtlasSignals = (loc, isLarge) => {
+        const points = atlasSignalPoints[loc.id] || [];
+        return (isLarge ? points : points.slice(0, 4)).map(point => ({
+          ...point,
+          size: isLarge ? point.size : Math.max(4, point.size * 0.48)
+        }));
+      };
+
+      const renderBroadleafTree = (key, x, y, scale = 1, crown = '#166534', trunk = '#3f2f18') => (
+        <g key={key} transform={`translate(${x} ${y}) scale(${scale})`}>
+          <path d="M0 62 C-6 34 -4 12 3 -6 L15 -6 C11 18 12 39 18 64 Z" fill={trunk} />
+          <path d="M6 18 C-31 23 -42 -18 -14 -34 C-6 -61 38 -57 43 -24 C74 -13 59 31 23 25 C18 36 3 35 6 18 Z" fill={crown} opacity="0.96" />
+          <path d="M-18 -20 C-2 -33 20 -30 34 -13" fill="none" stroke="#86efac" strokeWidth="2" opacity="0.26" />
+        </g>
+      );
+
+      const renderConiferTree = (key, x, y, scale = 1, needle = '#14532d') => (
+        <g key={key} transform={`translate(${x} ${y}) scale(${scale})`}>
+          <path d="M-5 74 L4 74 L7 6 L-2 6 Z" fill="#3f2f18" />
+          <path d="M1 -34 L-32 34 H34 Z" fill={needle} />
+          <path d="M1 -8 L-42 58 H43 Z" fill={needle} opacity="0.9" />
+          <path d="M1 18 L-34 78 H37 Z" fill={needle} opacity="0.82" />
+          <path d="M-19 34 L17 34 M-23 58 L24 58" stroke="#bbf7d0" strokeWidth="2" opacity="0.18" />
+        </g>
+      );
+
+      const renderCypressTree = (key, x, y, scale = 1) => (
+        <g key={key} transform={`translate(${x} ${y}) scale(${scale})`}>
+          <path d="M0 74 C-7 42 -5 4 4 -35 C13 1 15 43 8 74 Z" fill="#3f2f18" />
+          <path d="M3 -45 C-34 -18 -32 37 0 58 C35 33 39 -17 3 -45 Z" fill="#065f46" opacity="0.96" />
+          <path d="M-24 0 C-5 8 8 8 30 -3" fill="none" stroke="#a7f3d0" strokeWidth="2" opacity="0.2" />
+          <path d="M-18 26 C-22 43 -17 54 -7 64 M24 22 C28 43 23 56 10 68" fill="none" stroke="#d9f99d" strokeWidth="2" opacity="0.28" />
+          <path d="M-18 77 L-5 53 L6 77 M15 77 L5 54 L28 77" fill="none" stroke="#5b3416" strokeWidth="6" strokeLinecap="round" />
+        </g>
+      );
+
+      const renderGrassTufts = (count, y, color = '#65a30d') => (
+        Array.from({ length: count }).map((_, i) => {
+          const x = 18 + i * (444 / Math.max(count - 1, 1));
+          const height = 10 + (i % 4) * 5;
+          return (
+            <path
+              key={`grass-${i}`}
+              d={`M${x} ${y} C${x - 5} ${y - height} ${x - 1} ${y - height - 4} ${x + 2} ${y} M${x + 2} ${y} C${x + 9} ${y - height + 2} ${x + 6} ${y - height - 5} ${x + 5} ${y}`}
+              fill="none"
+              stroke={color}
+              strokeWidth="2"
+              opacity="0.7"
+              strokeLinecap="round"
+            />
+          );
+        })
+      );
+
+      const renderTermiteMound = (key, x, y, scale = 1) => (
+        <g key={key} transform={`translate(${x} ${y}) scale(${scale})`}>
+          <path d="M-24 42 C-30 10 -18 -27 2 -44 C25 -20 34 12 26 42 Z" fill="#92400e" stroke="#fbbf24" strokeWidth="2" opacity="0.9" />
+          <path d="M-14 24 C0 8 2 -10 -2 -31 M4 32 C14 11 11 -8 2 -24" fill="none" stroke="#451a03" strokeWidth="3" opacity="0.48" />
+          <ellipse cx="0" cy="43" rx="30" ry="6" fill="#1c1917" opacity="0.32" />
+        </g>
+      );
+
+      const renderSceneArtwork = (loc, palette) => {
+        switch (loc.id) {
+          case 'congaree':
+            return (
+              <>
+                <path d="M0 158 C82 132 162 154 240 132 C318 110 402 126 480 104 V280 H0 Z" fill={palette.horizon} opacity="0.56" />
+                <path d="M0 172 C82 185 152 160 228 178 C316 200 390 168 480 186 V280 H0 Z" fill={palette.water} opacity="0.55" />
+                <path d="M0 216 C96 197 180 230 270 209 C354 190 410 215 480 201 V280 H0 Z" fill="#020617" opacity="0.34" />
+                {[42, 123, 214, 335, 425].map((x, i) => renderCypressTree(`cypress-${i}`, x, 150 + (i % 2) * 12, 0.78 + (i % 3) * 0.08))}
+                <path d="M36 210 C116 198 184 216 254 201 C322 188 390 205 454 193" fill="none" stroke="#a7f3d0" strokeWidth="2" opacity="0.23" />
+                <path d="M28 235 C120 218 216 238 318 222 C392 211 435 227 472 218" fill="none" stroke="#67e8f9" strokeWidth="2" opacity="0.25" />
+              </>
+            );
+          case 'smoky':
+            return (
+              <>
+                <path d="M0 134 C73 81 142 112 211 72 C306 18 379 96 480 52 V280 H0 Z" fill="#312e81" opacity="0.54" />
+                <path d="M0 166 C74 113 150 139 221 104 C300 65 386 126 480 92 V280 H0 Z" fill="#164e63" opacity="0.5" />
+                <path d="M0 203 C82 170 143 179 216 152 C306 119 391 169 480 143 V280 H0 Z" fill={palette.ground} opacity="0.98" />
+                <path className="atlas-mist-drift" d="M-20 143 C70 130 121 154 205 138 C294 121 361 147 500 130" fill="none" stroke={palette.fog} strokeWidth="18" opacity="0.32" />
+                {[48, 116, 198, 286, 368, 438].map((x, i) => renderBroadleafTree(`hardwood-${i}`, x, 178 + (i % 2) * 17, 0.72 + (i % 3) * 0.1, i % 2 ? '#166534' : '#14532d'))}
+              </>
+            );
+          case 'allegheny':
+            return (
+              <>
+                <path d="M0 146 C80 104 151 126 221 104 C311 76 388 121 480 94 V280 H0 Z" fill="#14532d" opacity="0.62" />
+                <path d="M0 192 C104 166 178 184 248 150 C326 113 402 161 480 132 V280 H0 Z" fill="#052e16" />
+                <path d="M164 280 C188 232 216 199 240 165 C265 202 292 234 322 280 Z" fill="#422006" opacity="0.54" />
+                {[36, 92, 142, 326, 384, 434].map((x, i) => renderConiferTree(`hemlock-${i}`, x, 184 + (i % 2) * 12, 0.62 + (i % 3) * 0.09, i % 2 ? '#064e3b' : '#14532d'))}
+                {renderGrassTufts(16, 248, '#84cc16')}
+              </>
+            );
+          case 'grandfather':
+            return (
+              <>
+                <path d="M0 128 C82 70 154 118 230 78 C310 36 389 101 480 62 V280 H0 Z" fill="#0e7490" opacity="0.56" />
+                <path d="M0 169 C80 129 140 148 216 116 C305 78 382 136 480 103 V280 H0 Z" fill="#164e63" opacity="0.66" />
+                <path d="M0 215 C77 171 170 204 244 158 C324 110 398 190 480 149 V280 H0 Z" fill="#052e16" />
+                <path d="M44 245 C66 215 109 211 140 240 C113 253 75 255 44 245 Z M318 238 C348 201 410 204 438 244 C395 258 351 255 318 238 Z" fill="#475569" stroke="#94a3b8" strokeWidth="2" opacity="0.82" />
+                {[62, 143, 281, 372, 433].map((x, i) => renderConiferTree(`ridge-tree-${i}`, x, 184 + (i % 2) * 10, 0.6 + (i % 3) * 0.08, i % 2 ? '#0f766e' : '#064e3b'))}
+                <path className="atlas-mist-drift" d="M-30 154 C88 136 181 165 278 139 C367 116 430 151 512 132" fill="none" stroke={palette.fog} strokeWidth="16" opacity="0.26" />
+              </>
+            );
+          case 'highbridge':
+            return (
+              <>
+                <path d="M0 150 C78 111 150 137 230 100 C312 62 396 120 480 82 V280 H0 Z" fill="#1e3a8a" opacity="0.44" />
+                <path d="M0 208 C106 170 180 195 260 166 C342 138 411 170 480 150 V280 H0 Z" fill="#064e3b" />
+                <path d="M205 280 C238 242 286 230 342 224 C310 257 282 270 252 280 Z" fill={palette.water} opacity="0.64" />
+                <path d="M0 125 H480" stroke="#cbd5e1" strokeWidth="10" opacity="0.92" />
+                <path d="M0 140 H480" stroke="#64748b" strokeWidth="5" />
+                {[20, 88, 156, 224, 292, 360, 428].map((x, i) => (
+                  <g key={`pier-${i}`}>
+                    <path d={`M${x} 128 L${x + 19} 128 L${x + 2} 240 L${x - 16} 240 Z`} fill="#475569" opacity="0.86" />
+                    <path d={`M${x - 16} 240 L${x + 19} 128 M${x + 19} 240 L${x - 16} 128`} stroke="#94a3b8" strokeWidth="2" opacity="0.5" />
+                  </g>
+                ))}
+                {[38, 104, 176, 332, 408, 458].map((x, i) => renderBroadleafTree(`bridge-canopy-${i}`, x, 226 + (i % 2) * 8, 0.48 + (i % 3) * 0.06, '#15803d'))}
+              </>
+            );
+          case 'arizona':
+            return (
+              <>
+                <path d="M0 132 C74 89 157 98 227 76 C324 45 392 80 480 58 V280 H0 Z" fill="#7c2d12" opacity="0.72" />
+                <path d="M0 189 C65 155 132 171 205 135 C298 88 385 145 480 112 V280 H0 Z" fill="#431407" />
+                <path d="M0 223 C82 205 178 219 262 199 C342 179 406 193 480 177 V280 H0 Z" fill="#78350f" opacity="0.88" />
+                <path d="M196 280 C219 235 246 205 276 181 C293 219 320 251 356 280 Z" fill={palette.water} opacity="0.45" />
+                <path className="atlas-mist-drift" d="M254 58 C294 31 352 39 378 68 C338 71 294 76 254 58 Z" fill="#bae6fd" opacity="0.2" />
+                <g transform="translate(82 194) scale(0.82)">
+                  <path d="M0 68 L9 68 L10 3 L1 3 Z" fill="#166534" />
+                  <path d="M5 30 C-23 27 -28 6 -14 -9 C-1 -23 23 -16 27 2 C45 5 44 28 24 34" fill="#15803d" />
+                </g>
+                <g transform="translate(404 205) scale(0.78)">
+                  <path d="M0 58 L9 58 L10 -18 L1 -18 Z M1 12 C-16 10 -17 -8 -4 -15 M9 24 C26 20 30 2 16 -8" fill="none" stroke="#22c55e" strokeWidth="7" strokeLinecap="round" />
+                </g>
+                {renderGrassTufts(12, 255, '#a3e635')}
+              </>
+            );
+          case 'mexico':
+            return (
+              <>
+                <path d="M0 133 C75 84 142 112 223 71 C309 28 392 99 480 55 V280 H0 Z" fill="#14532d" opacity="0.45" />
+                <path d="M0 160 C80 124 145 142 220 111 C309 73 393 137 480 101 V280 H0 Z" fill="#064e3b" opacity="0.72" />
+                <path d="M0 207 C93 162 176 184 252 145 C340 100 405 174 480 140 V280 H0 Z" fill="#052e16" />
+                <path d="M70 104 C102 48 140 42 174 106 Z M322 106 C355 50 405 40 439 108 Z" fill="#1f2937" opacity="0.38" />
+                {[36, 82, 127, 184, 246, 304, 364, 425].map((x, i) => renderConiferTree(`oyamel-${i}`, x, 190 + (i % 3) * 11, 0.65 + (i % 2) * 0.08, i % 2 ? '#166534' : '#14532d'))}
+                <path className="atlas-mist-drift" d="M-20 150 C70 134 157 160 244 140 C330 119 407 147 500 126" fill="none" stroke={palette.fog} strokeWidth="18" opacity="0.24" />
+              </>
+            );
+          case 'japan':
+            return (
+              <>
+                <path d="M0 144 C88 104 167 132 240 98 C312 67 390 113 480 84 V280 H0 Z" fill="#115e59" opacity="0.58" />
+                <path d="M0 188 C78 166 151 186 224 160 C300 134 393 160 480 139 V280 H0 Z" fill="#052e2b" />
+                <path d="M0 204 C80 189 148 219 238 198 C330 177 399 198 480 185 V280 H0 Z" fill={palette.water} opacity="0.7" />
+                <path d="M74 156 C136 107 205 106 268 156" fill="none" stroke="#b91c1c" strokeWidth="9" strokeLinecap="round" />
+                <path d="M74 161 C136 121 205 121 268 161" fill="none" stroke="#fecaca" strokeWidth="3" strokeLinecap="round" opacity="0.8" />
+                <path d="M103 158 V185 M239 158 V185" stroke="#7f1d1d" strokeWidth="7" strokeLinecap="round" />
+                {renderBroadleafTree('willow', 390, 175, 0.72, '#166534')}
+                <path d="M360 174 C342 200 334 221 329 246 M385 169 C378 201 373 226 361 253 M410 172 C414 203 410 227 400 251" fill="none" stroke="#86efac" strokeWidth="3" opacity="0.46" />
+                <path d="M42 229 C132 213 214 239 302 216 C376 197 425 216 472 203" fill="none" stroke="#cffafe" strokeWidth="2" opacity="0.32" />
+              </>
+            );
+          case 'malaysia':
+            return (
+              <>
+                <path d="M0 150 C82 111 158 137 234 106 C314 72 395 117 480 90 V280 H0 Z" fill="#064e3b" opacity="0.6" />
+                <path d="M0 190 C92 166 166 188 241 158 C322 126 396 156 480 139 V280 H0 Z" fill="#042f2e" />
+                <path d="M0 207 C88 193 162 220 246 202 C330 184 396 204 480 188 V280 H0 Z" fill={palette.water} opacity="0.66" />
+                {[58, 157, 275, 380].map((x, i) => (
+                  <g key={`mangrove-${i}`}>
+                    {renderBroadleafTree(`mangrove-tree-${i}`, x, 164 + (i % 2) * 9, 0.74 + (i % 2) * 0.08, i % 2 ? '#15803d' : '#166534', '#3f2f18')}
+                    <path d={`M${x - 3} 220 C${x - 29} 206 ${x - 35} 190 ${x - 25} 174 M${x + 7} 218 C${x + 36} 202 ${x + 39} 184 ${x + 25} 171`} fill="none" stroke="#78350f" strokeWidth="6" strokeLinecap="round" opacity="0.86" />
+                  </g>
+                ))}
+                <path d="M18 238 C117 220 191 244 281 223 C362 205 421 225 470 214" fill="none" stroke="#bae6fd" strokeWidth="2" opacity="0.28" />
+              </>
+            );
+          case 'italy':
+            return (
+              <>
+                <path d="M0 141 C74 91 150 117 227 82 C316 40 394 107 480 74 V280 H0 Z" fill="#365314" opacity="0.5" />
+                <path d="M0 197 C90 162 169 183 238 145 C325 98 395 166 480 128 V280 H0 Z" fill="#1a2e05" />
+                <path d="M0 221 C80 196 158 218 239 197 C334 173 403 197 480 181 V280 H0 Z" fill="#3f6212" opacity="0.9" />
+                <path d="M38 238 C96 229 145 241 199 232 C273 220 341 235 432 222" fill="none" stroke="#d9f99d" strokeWidth="3" opacity="0.38" />
+                <g transform="translate(72 178) scale(0.8)">
+                  <path d="M0 75 L10 75 L10 -6 L0 -6 Z" fill="#3f2f18" />
+                  <path d="M5 -44 C-14 -16 -18 29 5 64 C28 28 25 -15 5 -44 Z" fill="#14532d" />
+                </g>
+                <g transform="translate(418 186) scale(0.65)">
+                  <path d="M0 75 L10 75 L10 -6 L0 -6 Z" fill="#3f2f18" />
+                  <path d="M5 -44 C-14 -16 -18 29 5 64 C28 28 25 -15 5 -44 Z" fill="#166534" />
+                </g>
+                {renderGrassTufts(24, 256, '#bef264')}
+              </>
+            );
+          case 'brazil':
+            return (
+              <>
+                <path d="M0 154 C80 119 153 138 226 112 C319 80 401 125 480 104 V280 H0 Z" fill="#713f12" opacity="0.56" />
+                <path d="M0 203 C85 181 160 198 244 178 C326 159 405 175 480 162 V280 H0 Z" fill="#422006" />
+                <path d="M0 228 C94 213 166 237 250 220 C338 201 408 218 480 208 V280 H0 Z" fill="#78350f" opacity="0.78" />
+                {[76, 166, 258, 356, 426].map((x, i) => renderTermiteMound(`mound-${i}`, x, 205 + (i % 2) * 13, 0.76 + (i % 3) * 0.12))}
+                {renderGrassTufts(18, 252, '#84cc16')}
+              </>
+            );
+          default:
+            return (
+              <>
+                <path d="M0 150 C84 110 166 138 238 104 C322 64 396 123 480 91 V280 H0 Z" fill={palette.horizon} opacity="0.58" />
+                <path d="M0 205 C93 170 171 189 248 154 C337 114 407 171 480 139 V280 H0 Z" fill={palette.ground} />
+              </>
+            );
+        }
+      };
+
       const Landmark = ({ kind, loc, size = 'normal' }) => {
         const isLarge = size === 'large';
-        const iconSize = isLarge ? 44 : 22;
-        const glowSize = isLarge ? 'w-4 h-4' : 'w-2 h-2';
-        const glow = `${loc.accentBg} shadow-[0_0_18px_rgba(250,204,21,0.9)]`;
+        const palette = atlasScenePalettes[loc.id] || atlasScenePalettes.congaree;
+        const idPrefix = `atlas-${loc.id}-${size}`;
+        const signals = getAtlasSignals(loc, isLarge);
 
         return (
           <div className={`absolute inset-0 overflow-hidden rounded-[inherit] bg-gradient-to-b ${loc.gradient}`}>
-            <div className="absolute inset-0 twinkle-bg opacity-40"></div>
+            <svg viewBox="0 0 480 280" preserveAspectRatio="none" className="absolute inset-0 h-full w-full" role="img" aria-label={`${loc.name} custom night landscape with ${loc.signal}`}>
+              <defs>
+                <linearGradient id={`${idPrefix}-sky`} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={palette.sky} />
+                  <stop offset="58%" stopColor={palette.horizon} />
+                  <stop offset="100%" stopColor={palette.ground} />
+                </linearGradient>
+                <radialGradient id={`${idPrefix}-moon`} cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#f8fafc" stopOpacity="0.92" />
+                  <stop offset="100%" stopColor="#bfdbfe" stopOpacity="0" />
+                </radialGradient>
+                <linearGradient id={`${idPrefix}-vignette`} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#020617" stopOpacity="0" />
+                  <stop offset="100%" stopColor="#020617" stopOpacity="0.78" />
+                </linearGradient>
+              </defs>
+              <rect width="480" height="280" fill={`url(#${idPrefix}-sky)`} />
+              <circle cx="388" cy="48" r="36" fill={`url(#${idPrefix}-moon)`} opacity={loc.id === 'arizona' ? 0.34 : 0.55} />
+              <g opacity="0.5">
+                <circle cx="68" cy="45" r="1.4" fill="#e0f2fe" />
+                <circle cx="147" cy="27" r="1.1" fill="#e0f2fe" />
+                <circle cx="238" cy="49" r="1.2" fill="#e0f2fe" />
+                <circle cx="446" cy="31" r="1.3" fill="#e0f2fe" />
+              </g>
+              {renderSceneArtwork(loc, palette, kind)}
+              <path className="atlas-mist-drift" d="M-35 118 C78 100 158 126 249 111 C349 95 418 122 516 103" fill="none" stroke={palette.fog} strokeWidth="13" opacity={isLarge ? 0.2 : 0.12} />
+              <rect width="480" height="280" fill={`url(#${idPrefix}-vignette)`} />
+            </svg>
+            <div className="absolute inset-0 twinkle-bg opacity-20"></div>
+            <div className="absolute inset-0 pointer-events-none">
+              {signals.map((point, i) => (
+                <span
+                  key={`${point.x}-${point.y}-${i}`}
+                  className={`atlas-signal-orb ${point.anim}`}
+                  style={{
+                    left: `${point.x}%`,
+                    top: `${point.y}%`,
+                    '--signal-size': `${point.size}px`,
+                    '--signal-color': point.color || palette.glow,
+                    '--signal-delay': `${point.delay || 0}s`
+                  }}
+                ></span>
+              ))}
+            </div>
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-slate-950/80 to-transparent"></div>
-
-            {(kind === 'swamp' || kind === 'mangrove' || kind === 'river') && (
-              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-cyan-500/25 border-t border-cyan-200/20">
-                <Waves size={isLarge ? 72 : 34} className="absolute left-1/2 -translate-x-1/2 top-1 text-cyan-200/60" />
-              </div>
-            )}
-
-            {(kind === 'mountains' || kind === 'ridge' || kind === 'desert' || kind === 'meadow') && (
-              <>
-                <Mountain size={iconSize + 10} className={`absolute ${isLarge ? 'left-8 bottom-8' : 'left-2 bottom-2'} text-slate-300/80`} />
-                <Mountain size={iconSize + 18} className={`absolute ${isLarge ? 'right-8 bottom-5' : 'right-1 bottom-1'} text-slate-500/80`} />
-              </>
-            )}
-
-            {(kind === 'forest' || kind === 'oyamel' || kind === 'swamp' || kind === 'mangrove') && (
-              <>
-                <Trees size={iconSize + 12} className={`absolute ${isLarge ? 'left-8 bottom-9' : 'left-2 bottom-2'} text-green-300/90`} />
-                <Trees size={iconSize + 5} className={`absolute ${isLarge ? 'right-10 bottom-8' : 'right-2 bottom-2'} text-emerald-500/90`} />
-              </>
-            )}
-
-            {kind === 'bridge' && (
-              <div className={`absolute ${isLarge ? 'left-8 right-8 bottom-12 h-12' : 'left-2 right-2 bottom-4 h-6'}`}>
-                <div className="absolute inset-x-0 top-1/2 h-2 bg-slate-300/80 rounded-full"></div>
-                <div className="absolute left-2 right-2 bottom-0 h-full border-x-4 border-t-4 border-slate-400/70 rounded-t-full"></div>
-                <Building size={iconSize} className="absolute right-0 -top-3 text-slate-200/80" />
-              </div>
-            )}
-
-            {kind === 'river' && (
-              <div className={`absolute ${isLarge ? 'left-10 top-9 w-20 h-14' : 'left-3 top-3 w-9 h-7'} text-red-300`}>
-                <div className="absolute inset-x-0 top-0 h-2 bg-red-400 rounded-sm"></div>
-                <div className="absolute left-1 top-2 bottom-0 w-2 bg-red-500 rounded-sm"></div>
-                <div className="absolute right-1 top-2 bottom-0 w-2 bg-red-500 rounded-sm"></div>
-              </div>
-            )}
-
-            {kind === 'desert' && (
-              <div className={`absolute ${isLarge ? 'left-16 bottom-14 w-10 h-20' : 'left-5 bottom-5 w-5 h-9'}`}>
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-3 h-full bg-green-400/80 rounded-t-full"></div>
-                <div className="absolute left-0 top-1/3 w-3 h-5 border-l-4 border-b-4 border-green-400/80 rounded-bl-full"></div>
-                <div className="absolute right-0 top-1/2 w-3 h-5 border-r-4 border-b-4 border-green-400/80 rounded-br-full"></div>
-              </div>
-            )}
-
-            {kind === 'termite' && (
-              <div className={`absolute ${isLarge ? 'left-1/2 bottom-10 w-24 h-28' : 'left-1/2 bottom-3 w-10 h-12'} -translate-x-1/2 bg-amber-800/80 border border-amber-500/60 rounded-t-[45%] rounded-b-lg shadow-inner`}>
-                {[0, 1, 2, 3].map(i => (
-                  <div key={i} className={`absolute rounded-full ${loc.accentBg} animate-pulse shadow-[0_0_12px_rgba(190,242,100,0.9)]`} style={{ width: isLarge ? 9 : 4, height: isLarge ? 9 : 4, left: `${25 + (i % 2) * 38}%`, top: `${24 + i * 16}%`, animationDelay: `${i * 0.2}s` }}></div>
-                ))}
-              </div>
-            )}
-
-            {kind === 'meadow' && (
-              <div className={`absolute inset-x-0 ${isLarge ? 'bottom-7 h-14' : 'bottom-2 h-6'} flex items-end justify-around`}>
-                {[0, 1, 2, 3, 4].map(i => (
-                  <Leaf key={i} size={isLarge ? 24 : 12} className={i % 2 ? 'text-yellow-300/80' : 'text-green-300/80'} style={{ transform: `rotate(${i * 28}deg)` }} />
-                ))}
-              </div>
-            )}
-
-            {sparklePositions.slice(0, isLarge ? 6 : 3).map((spark, i) => (
-              <div
-                key={i}
-                className={`absolute rounded-full ${glowSize} ${glow} animate-snappy`}
-                style={{ left: `${spark.left}%`, top: `${spark.top}%`, animationDelay: `${spark.delay}s` }}
-              ></div>
-            ))}
           </div>
         );
       };
@@ -4500,7 +5907,7 @@
       );
 
       const LocationScene = ({ loc }) => (
-        <div className="relative min-h-[220px] rounded-3xl border border-slate-700 overflow-hidden shadow-[inset_0_0_80px_rgba(15,23,42,0.9)]">
+        <div className="relative min-h-[300px] sm:min-h-[330px] xl:min-h-[310px] rounded-3xl border border-slate-700 overflow-hidden shadow-[inset_0_0_80px_rgba(15,23,42,0.9)]">
           <Landmark kind={loc.landscape} loc={loc} size="large" />
           {sweepOn && <div className="absolute inset-y-0 w-1/3 bg-cyan-200/20 blur-md animate-scan-sweep"></div>}
           <div className="absolute left-4 top-4 right-4 flex items-start justify-between gap-3">
