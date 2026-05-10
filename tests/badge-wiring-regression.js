@@ -36,6 +36,10 @@ const MIME_TYPES = {
   '.webp': 'image/webp'
 };
 
+function isIgnorableConsoleError(text) {
+  return text.includes('[BABEL] Note: The code generator has deoptimised');
+}
+
 function createServer() {
   return http.createServer((request, response) => {
     const requestUrl = new URL(request.url, 'http://127.0.0.1');
@@ -114,7 +118,8 @@ async function run() {
   const browserErrors = [];
   page.on('pageerror', (error) => browserErrors.push(error.message));
   page.on('console', (message) => {
-    if (message.type() === 'error') browserErrors.push(message.text());
+    const text = message.text();
+    if (message.type() === 'error' && !isIgnorableConsoleError(text)) browserErrors.push(text);
   });
 
   try {

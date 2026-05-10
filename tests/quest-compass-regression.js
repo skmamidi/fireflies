@@ -52,6 +52,10 @@ const MIME_TYPES = {
   '.webp': 'image/webp'
 };
 
+function isIgnorableConsoleError(text) {
+  return text.includes('[BABEL] Note: The code generator has deoptimised');
+}
+
 function createServer() {
   return http.createServer((request, response) => {
     const requestUrl = new URL(request.url, 'http://127.0.0.1');
@@ -151,7 +155,8 @@ async function run() {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   page.on('pageerror', (error) => browserErrors.push(error.message));
   page.on('console', (message) => {
-    if (message.type() === 'error') browserErrors.push(message.text());
+    const text = message.text();
+    if (message.type() === 'error' && !isIgnorableConsoleError(text)) browserErrors.push(text);
   });
 
   try {
@@ -247,7 +252,8 @@ async function run() {
     const stageEntry = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     stageEntry.on('pageerror', (error) => browserErrors.push(error.message));
     stageEntry.on('console', (message) => {
-      if (message.type() === 'error') browserErrors.push(message.text());
+      const text = message.text();
+      if (message.type() === 'error' && !isIgnorableConsoleError(text)) browserErrors.push(text);
     });
     await loadClean(stageEntry, new URL('global-map.html', url).toString());
     await assertCompassIncludes(stageEntry, 'Mission 6/14');
@@ -261,7 +267,8 @@ async function run() {
     const surveyEntry = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     surveyEntry.on('pageerror', (error) => browserErrors.push(error.message));
     surveyEntry.on('console', (message) => {
-      if (message.type() === 'error') browserErrors.push(message.text());
+      const text = message.text();
+      if (message.type() === 'error' && !isIgnorableConsoleError(text)) browserErrors.push(text);
     });
     await loadClean(surveyEntry, new URL('field-survey.html', url).toString());
     await assertCompassIncludes(surveyEntry, 'Mission 9/14');
@@ -275,7 +282,8 @@ async function run() {
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     mobile.on('pageerror', (error) => browserErrors.push(error.message));
     mobile.on('console', (message) => {
-      if (message.type() === 'error') browserErrors.push(message.text());
+      const text = message.text();
+      if (message.type() === 'error' && !isIgnorableConsoleError(text)) browserErrors.push(text);
     });
     await loadClean(mobile, url);
     await assertCompassIncludes(mobile, 'Field Journal');
