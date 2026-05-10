@@ -4479,7 +4479,7 @@
           <section className="relative shrink-0 mb-5 overflow-hidden rounded-3xl border border-cyan-300/25 bg-slate-900/95 p-4 shadow-[0_0_38px_rgba(34,211,238,0.12)] sm:p-5" aria-live="polite">
             <div className="absolute inset-0 twinkle-bg opacity-20"></div>
             <div className={`absolute -right-16 -top-24 h-52 w-52 rounded-full bg-gradient-to-r ${activeNode.color} opacity-20 blur-3xl`}></div>
-            <div className="relative grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.35fr] xl:grid-cols-[0.82fr_1.42fr_0.92fr]">
+            <div className="relative grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.35fr] min-[1120px]:grid-cols-[0.72fr_1.5fr_0.78fr] xl:grid-cols-[0.82fr_1.42fr_0.92fr]">
               <div className="flex items-center gap-4">
                 <div className="h-24 w-24 shrink-0 rounded-3xl border border-slate-700 bg-slate-950/85 p-2 shadow-[inset_0_0_28px_rgba(250,204,21,0.08)] sm:h-28 sm:w-28">
                   <TaxonomySvg id={activeNode.visual} className="h-full w-full" />
@@ -4505,7 +4505,7 @@
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 xl:grid-cols-1">
+              <div className="grid grid-cols-2 gap-3 min-[1120px]:grid-cols-1">
                 <div className="rounded-2xl border border-green-300/20 bg-green-300/10 p-3">
                   <p className="text-[10px] font-black uppercase tracking-wider text-green-100">Big Idea</p>
                   <p className="mt-1 text-sm font-black leading-snug text-green-200">{activeNode.bigIdea}</p>
