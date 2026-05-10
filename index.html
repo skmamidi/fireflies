@@ -697,6 +697,104 @@
           scrollbar-color: rgba(71, 85, 105, 0.8) rgba(30, 41, 59, 0.5);
         }
 
+        @media (min-width: 768px) and (max-width: 1194px) {
+          .lantern-shell:not([data-stage="familytree"]) > main {
+            padding: 0.85rem 1rem 1.15rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .academy-header {
+            padding: 0.55rem 0.75rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .academy-header > div:first-child {
+            gap: 0.65rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .academy-header h1 {
+            font-size: 1.18rem !important;
+            line-height: 1.05 !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .badge-summary-panel {
+            margin-top: 0.45rem !important;
+            padding: 0.55rem 0.7rem !important;
+            border-radius: 0.85rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .stage-nav-scroll {
+            margin-bottom: 0.65rem !important;
+            padding-bottom: 0.4rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .stage-nav-scroll > div {
+            gap: 0.85rem !important;
+            padding-top: 0.25rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .stage-nav-scroll a {
+            width: 5.35rem !important;
+            gap: 0.35rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .stage-nav-scroll a > div {
+            width: 2.05rem !important;
+            height: 2.05rem !important;
+            border-width: 3px !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .stage-nav-scroll span {
+            max-width: 5.1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.58rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .stage-progress-spark {
+            top: 1.42rem !important;
+            width: 12px !important;
+            height: 12px !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .stage-progress-spark::after {
+            left: -42px !important;
+            top: 5px !important;
+            width: 46px !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .quest-compass {
+            margin-bottom: 0.75rem !important;
+            padding: 0.65rem !important;
+            border-radius: 1rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .quest-compass h2 {
+            font-size: 1.12rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .quest-compass .quest-brief {
+            -webkit-line-clamp: 1;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .quest-guide-firefly {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+
+        @media (min-width: 768px) and (max-height: 900px) {
+          .lantern-shell:not([data-stage="familytree"]) .badge-summary-panel {
+            max-height: 4.25rem !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .badge-summary-panel p {
+            display: none !important;
+          }
+
+          .lantern-shell:not([data-stage="familytree"]) .quest-compass .quest-guide-firefly + div p:first-child {
+            font-size: 0.78rem !important;
+          }
+        }
+
         .firefly-click-cursor,
         .firefly-click-cursor * {
           cursor: crosshair !important;
@@ -1465,6 +1563,14 @@
       const canContinueToNext = nextStage && nextStage.id !== stage.id && isEarned;
       const [journalOpen, setJournalOpen] = useState(false);
       const activeStep = steps.find(step => step.status === 'active') || steps.find(step => step.status !== 'done') || steps[steps.length - 1];
+      const useFamilyTreeLayout = stage.id === 'familytree';
+      const compassGridClass = useFamilyTreeLayout
+        ? 'relative z-10 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'
+        : 'relative z-10 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center';
+      const compassActionGridClass = useFamilyTreeLayout
+        ? 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:w-52 lg:grid-cols-1'
+        : 'grid grid-cols-2 gap-2 sm:grid-cols-3 md:w-48 md:grid-cols-1 lg:w-52';
+      const wideCompassActionSpan = useFamilyTreeLayout ? 'sm:col-span-3 lg:col-span-1' : 'sm:col-span-3 md:col-span-1';
       const primaryAction = canContinueToNext
         ? { label: `Continue to ${nextStage.title}`, onClick: onResumeNext, icon: <ArrowRight size={16} /> }
         : { label: isEarned ? 'Review This Mission' : 'Work on This Mission', onClick: onWorkHere, icon: <Target size={16} /> };
@@ -1478,7 +1584,7 @@
           className="quest-compass polished-surface relative mb-4 overflow-hidden rounded-3xl border border-slate-700/80 bg-slate-900/90 p-3 shadow-[0_18px_44px_rgba(2,6,23,0.32)] backdrop-blur-md sm:p-4"
           aria-label="Field journal mission compass"
         >
-          <div className="relative z-10 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className={compassGridClass}>
             <div className="flex min-w-0 gap-3">
               <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-yellow-300/30 bg-slate-950/70 text-yellow-200 sm:flex">
                 <FileText size={21} />
@@ -1529,7 +1635,7 @@
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:w-52 lg:grid-cols-1">
+            <div className={compassActionGridClass}>
               <button
                 type="button"
                 onClick={onViewBadge}
@@ -1556,7 +1662,7 @@
                 <button
                   type="button"
                   onClick={onResumeNext}
-                  className="col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-yellow-300/30 bg-yellow-300/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-yellow-100 transition-all hover:border-yellow-300/60 hover:bg-yellow-300/15 active:scale-95 sm:col-span-3 lg:col-span-1"
+                  className={`col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-yellow-300/30 bg-yellow-300/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-yellow-100 transition-all hover:border-yellow-300/60 hover:bg-yellow-300/15 active:scale-95 ${wideCompassActionSpan}`}
                 >
                   Return to Guided Path <ArrowRight size={14} />
                 </button>
@@ -1565,13 +1671,13 @@
                 <button
                   type="button"
                   onClick={onWorkHere}
-                  className="col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-950/60 px-4 py-1.5 text-sm font-black text-slate-200 transition-all hover:border-cyan-300/50 hover:bg-slate-800 active:scale-95 sm:col-span-3 lg:col-span-1"
+                  className={`col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-950/60 px-4 py-1.5 text-sm font-black text-slate-200 transition-all hover:border-cyan-300/50 hover:bg-slate-800 active:scale-95 ${wideCompassActionSpan}`}
                 >
                   Review This Mission <Target size={15} />
                 </button>
               )}
               {!nextStage && isEarned && (
-                <div className="col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-green-300/40 bg-green-300/10 px-4 py-1.5 text-sm font-black text-green-100 sm:col-span-3 lg:col-span-1">
+                <div className={`col-span-2 inline-flex min-h-[2.35rem] items-center justify-center gap-2 rounded-full border border-green-300/40 bg-green-300/10 px-4 py-1.5 text-sm font-black text-green-100 ${wideCompassActionSpan}`}>
                   Academy complete <CheckCircle size={16} />
                 </div>
               )}
@@ -3532,6 +3638,7 @@
       return (
         <div
           className="lantern-shell isolate min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-yellow-500/30 flex flex-col relative overflow-hidden twinkle-bg"
+          data-stage={currentStageMeta.id}
           onPointerMove={handleShellPointerMove}
           onClick={handleShellClick}
           onPointerLeave={handleShellPointerLeave}
@@ -4828,9 +4935,9 @@
               <p className="text-sm text-slate-300 mt-2">Tap each ingredient card first. Once all three are understood, the Catalyze chamber unlocks.</p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-5 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(17rem,0.9fr)_minmax(0,1.1fr)] gap-5 w-full">
               <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-3">
                   {ingredients.map((ingredient, index) => {
                     const isVisited = visitedIngredientIds.includes(ingredient.id);
                     const isActive = activeIngredientId === ingredient.id;
@@ -4872,7 +4979,7 @@
                 </div>
               </div>
 
-              <div className="relative bg-slate-950 border-2 border-slate-700 rounded-3xl p-5 sm:p-6 overflow-hidden min-h-[420px] flex flex-col">
+              <div className="relative bg-slate-950 border-2 border-slate-700 rounded-3xl p-5 sm:p-6 overflow-hidden min-h-[420px] md:min-h-[30rem] flex flex-col">
                 <div className="absolute inset-0 twinkle-bg opacity-40"></div>
                 <div className={`absolute left-1/2 top-1/2 w-64 h-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[70px] transition-all duration-1000 ${mixed ? 'bg-yellow-300/40 scale-125' : allIngredientsVisited ? 'bg-green-300/20 scale-100' : 'bg-slate-700/20 scale-75'}`}></div>
                 <div className="relative z-10 flex-1 flex flex-col">
@@ -5573,8 +5680,8 @@
             </p>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(360px,0.8fr)_minmax(680px,1.2fr)] gap-4 flex-1 min-h-0">
-            <div className="relative bg-slate-950 border-2 border-slate-800 rounded-3xl overflow-hidden min-h-[440px] p-4 sm:p-6">
+          <div className="grid grid-cols-1 min-[820px]:grid-cols-[minmax(18rem,0.55fr)_minmax(0,0.95fr)] xl:grid-cols-[minmax(360px,0.8fr)_minmax(680px,1.2fr)] gap-4 flex-1 min-h-0">
+            <div className="relative bg-slate-950 border-2 border-slate-800 rounded-3xl overflow-hidden min-h-[440px] min-[820px]:min-h-[34rem] p-4 sm:p-6">
               <div className="absolute inset-0 bg-gradient-to-b from-blue-950/50 via-slate-950 to-green-950/30"></div>
               <div className="absolute inset-0 twinkle-bg opacity-40"></div>
               <div className="relative z-10 flex items-center justify-between gap-3 mb-4">
@@ -5661,10 +5768,10 @@
                   </div>
 
                   <div className="min-w-0 flex flex-col gap-3">
-                    <div className="relative min-h-[430px] rounded-3xl border border-cyan-400/30 bg-slate-950/80 overflow-hidden flex items-center justify-center p-3 shadow-[0_0_34px_rgba(34,211,238,0.12)]">
+                    <div className="relative min-h-[430px] min-[820px]:min-h-[300px] xl:min-h-[430px] rounded-3xl border border-cyan-400/30 bg-slate-950/80 overflow-hidden flex items-center justify-center p-3 shadow-[0_0_34px_rgba(34,211,238,0.12)]">
                       <div className="absolute inset-0 twinkle-bg opacity-30"></div>
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(34,211,238,0.16),transparent_42%),radial-gradient(circle_at_70%_75%,rgba(250,204,21,0.12),transparent_30%)]"></div>
-                      <GlowOrganismSvg organism={selected} className="relative z-10 h-[420px] w-[420px] max-h-[min(54vh,420px)] max-w-full" />
+                      <GlowOrganismSvg organism={selected} className="relative z-10 h-[420px] w-[420px] max-h-[min(38vh,420px)] xl:max-h-[min(54vh,420px)] max-w-full" />
                     </div>
                     <div className="rounded-2xl border border-slate-700 bg-slate-950/90 p-3">
                       <p className="text-[10px] text-slate-500 font-black uppercase tracking-wider">Glowing Part</p>
@@ -6765,7 +6872,7 @@
       );
 
       const LocationScene = ({ loc }) => (
-        <div className="relative min-h-[300px] sm:min-h-[330px] xl:min-h-[310px] rounded-3xl border border-slate-700 overflow-hidden shadow-[inset_0_0_80px_rgba(15,23,42,0.9)]">
+        <div className="relative min-h-[300px] sm:min-h-[330px] lg:min-h-[300px] xl:min-h-[310px] rounded-3xl border border-slate-700 overflow-hidden shadow-[inset_0_0_80px_rgba(15,23,42,0.9)]">
           <Landmark kind={loc.landscape} loc={loc} size="large" />
           {sweepOn && <div className="absolute inset-y-0 w-1/3 bg-cyan-200/20 blur-md animate-scan-sweep"></div>}
           <div className="absolute left-4 top-4 right-4 flex items-start justify-between gap-3">
@@ -6782,13 +6889,13 @@
       );
 
       return (
-        <div className="flex flex-col gap-4 animate-in slide-in-from-right duration-500 h-full min-h-0 overflow-y-auto xl:overflow-hidden custom-scrollbar pr-1 xl:pr-0">
+        <div className="flex flex-col gap-4 animate-in slide-in-from-right duration-500 h-full min-h-0 overflow-y-auto lg:overflow-hidden custom-scrollbar pr-1 lg:pr-0">
           <div className="text-center shrink-0">
             <h2 className="text-3xl sm:text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-yellow-300">Firefly Field Atlas</h2>
             <p className="text-slate-300 max-w-3xl mx-auto">Follow landmark habitats around the world, collect field stamps, and compare how each landscape changes the glow show.</p>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-3 bg-slate-950/75 border border-slate-800 rounded-3xl p-3 shrink-0">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-950/75 border border-slate-800 rounded-3xl p-3 shrink-0">
             <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 rounded-full p-1">
               <button onClick={() => changeMapView('us')} className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${mapView === 'us' ? 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.45)]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>United States</button>
               <button onClick={() => changeMapView('global')} className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${mapView === 'global' ? 'bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.45)]' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>Worldwide</button>
@@ -6813,12 +6920,12 @@
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.9fr)] gap-5 flex-1 xl:flex-none min-h-0 xl:h-[min(58vh,36rem)] xl:min-h-[30rem] xl:overflow-hidden xl:items-stretch">
-            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-4 relative overflow-hidden flex min-h-0 flex-col gap-4 xl:h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.9fr)] gap-5 flex-1 lg:flex-none min-h-0 lg:h-[min(58vh,36rem)] lg:min-h-[30rem] lg:overflow-hidden lg:items-stretch">
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-4 relative overflow-hidden flex min-h-0 flex-col gap-4 lg:h-full">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-yellow-400/5 pointer-events-none"></div>
               {sweepOn && <div className="absolute inset-y-0 w-1/4 bg-cyan-200/10 blur-2xl animate-scan-sweep pointer-events-none"></div>}
 
-              <div className="relative w-full flex-1 min-h-[320px] sm:min-h-[360px] xl:min-h-0 rounded-3xl bg-slate-950/70 border border-slate-800 overflow-hidden flex items-center justify-center">
+              <div className="relative w-full flex-1 min-h-[320px] sm:min-h-[360px] lg:min-h-0 rounded-3xl bg-slate-950/70 border border-slate-800 overflow-hidden flex items-center justify-center">
                 <div className="absolute inset-0 twinkle-bg opacity-45"></div>
                 <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-blue-950/60 to-transparent"></div>
                 <div className="relative w-full max-w-[760px] opacity-85" style={{ aspectRatio: mapView === 'us' ? '5/3' : '2/1' }}>
@@ -6872,7 +6979,7 @@
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-col gap-4 overflow-visible xl:h-full xl:overflow-y-auto xl:overscroll-contain xl:pr-2 custom-scrollbar">
+            <div className="flex min-h-0 flex-col gap-4 overflow-visible lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pr-2 custom-scrollbar">
               <div className="bg-slate-800/80 border border-slate-700 rounded-3xl p-4 sm:p-5 flex flex-col gap-4 animate-in fade-in duration-300 shrink-0">
                 <LocationScene loc={featuredLocation} />
                   <div className="flex items-start gap-3 mb-4">
@@ -6884,7 +6991,7 @@
                   </div>
                 <p className="text-slate-300 text-sm leading-relaxed">{featuredLocation.desc}</p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2">
                   {[
                     ['Glow', featuredLocation.glow],
                     ['Season', featuredLocation.season],
@@ -7482,7 +7589,7 @@
 
       return (
         <div className={`flex flex-col h-full rounded-2xl p-3 sm:p-5 transition-colors duration-300 border-2 ${threatIsActive ? 'bg-red-950/35 border-red-400' : 'bg-slate-900/85 border-slate-700'}`}>
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] gap-4 flex-1 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] gap-4 flex-1 min-h-0">
             <div className="flex flex-col gap-4 min-h-0">
               <div className="bg-slate-950/65 border border-slate-800 rounded-xl p-4 shrink-0">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -8001,7 +8108,7 @@
               <p className="text-slate-200 leading-relaxed bg-slate-900/85 border border-slate-700 rounded-2xl p-5">{result.explanation}</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1.05fr] gap-4 w-full max-w-5xl text-left">
+            <div className="grid grid-cols-1 md:grid-cols-[0.95fr_1.05fr] gap-4 w-full max-w-5xl text-left">
               <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5">
                 <h3 className="text-lg font-black text-white mb-3 flex items-center gap-2"><Search size={18} className="text-blue-300" /> Selection Report</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -8049,11 +8156,11 @@
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1.05fr] gap-5 flex-1 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-[0.95fr_1.05fr] gap-5 flex-1 min-h-0">
             <div className="flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 min-h-0">
               <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5">
                 <h3 className="font-black text-white mb-3 flex items-center gap-2"><Mountain size={18} className="text-orange-400"/> 1. Choose the habitat pressure</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-1 gap-2">
                   {Object.entries(habitats).map(([id, option]) => (
                     <button
                       key={id}
@@ -8475,7 +8582,7 @@
       if (gameState === 'intro') {
         return (
           <div className="flex flex-col gap-6 animate-in zoom-in duration-500 h-full">
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-stretch">
+            <div className="grid gap-6 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-stretch">
               <div className="relative overflow-hidden rounded-3xl border border-blue-400/30 bg-slate-900 p-6 sm:p-8 shadow-[0_20px_50px_rgba(2,6,23,0.35)]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.18),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(250,204,21,0.13),transparent_30%)]"></div>
                 <div className="relative z-10">
@@ -8530,7 +8637,7 @@
               </div>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3">
               {surveySites.map(site => (
                 <div key={site.id} className="rounded-2xl border border-slate-700 bg-slate-900/80 p-4">
                   <p className="text-sm font-black text-white">{site.name}</p>
@@ -8622,7 +8729,7 @@
       // PLAYING STATE
       return (
         <div className="flex flex-col h-full animate-in slide-in-from-right duration-500 min-h-0 relative">
-          <div className="grid gap-3 shrink-0 mb-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]">
+          <div className="grid gap-3 shrink-0 mb-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,0.8fr)]">
             <div className="rounded-2xl border border-slate-700 bg-slate-900/90 p-4">
               <p className="text-[10px] font-black uppercase tracking-wider text-blue-300">Active Transect</p>
               <h2 className="text-xl font-black text-white">{surveySite.name}</h2>
@@ -8919,10 +9026,10 @@
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
+          <div className="flex flex-col md:flex-row gap-6 flex-1 min-h-0">
             {/* Visual Simulator */}
             <div
-              className="w-full lg:w-3/5 relative bg-slate-950 rounded-3xl border-4 border-slate-800 overflow-hidden flex flex-col items-center justify-end min-h-[390px] shadow-[inset_0_0_80px_rgba(15,23,42,0.8)]"
+              className="w-full md:w-3/5 relative bg-slate-950 rounded-3xl border-4 border-slate-800 overflow-hidden flex flex-col items-center justify-end min-h-[390px] md:min-h-[34rem] lg:min-h-[390px] shadow-[inset_0_0_80px_rgba(15,23,42,0.8)]"
               aria-label="Light pollution meadow simulator"
             >
               
@@ -9021,7 +9128,7 @@
             </div>
 
             {/* Controls */}
-            <div className="w-full lg:w-2/5 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="w-full md:w-2/5 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
                   <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Effective stress</p>
@@ -9375,7 +9482,7 @@
 
           <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl p-4 sm:p-6 flex-1 overflow-y-auto custom-scrollbar min-h-0">
             {activeTab === 'importance' && (
-              <div className="animate-in fade-in duration-300 grid grid-cols-1 xl:grid-cols-[1.08fr_0.92fr] gap-5">
+              <div className="animate-in fade-in duration-300 grid grid-cols-1 md:grid-cols-[1.08fr_0.92fr] gap-5">
                 <div className="space-y-4">
                   <div className="relative min-h-[390px] bg-slate-950 rounded-3xl border border-green-900/70 overflow-hidden shadow-[inset_0_0_90px_rgba(34,197,94,0.10)]">
                     <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-emerald-950/50 to-lime-950/70"></div>
@@ -9493,7 +9600,7 @@
             )}
 
             {activeTab === 'indicator' && (
-              <div className="animate-in fade-in duration-300 grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-5">
+              <div className="animate-in fade-in duration-300 grid grid-cols-1 md:grid-cols-[0.95fr_1.05fr] gap-5">
                 <div className="space-y-4">
                   <div className="bg-slate-950/70 border border-slate-800 rounded-3xl p-5">
                     <h3 className="font-black text-blue-300 flex items-center gap-2"><Target size={20} /> Bioindicator Scan</h3>
@@ -9581,7 +9688,7 @@
             )}
 
             {activeTab === 'action' && (
-              <div className="animate-in fade-in duration-300 grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-5">
+              <div className="animate-in fade-in duration-300 grid grid-cols-1 md:grid-cols-[1.05fr_0.95fr] gap-5">
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {actionCards.map(action => {
@@ -9751,7 +9858,7 @@
             </p>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-5 flex-1 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-[1.05fr_0.95fr] gap-5 flex-1 min-h-0">
             <div className="flex flex-col gap-4 min-h-0">
               <div className="relative min-h-[430px] bg-slate-950 border-4 border-slate-800 rounded-3xl overflow-hidden shadow-[inset_0_0_80px_rgba(34,197,94,0.08)]">
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-blue-950/60 to-green-950/80"></div>
@@ -9765,7 +9872,7 @@
                   <div className="absolute -top-10 left-4 w-28 h-16 bg-slate-800 rotate-45 rounded-md border border-slate-700"></div>
                   <div className="absolute bottom-0 left-12 w-10 h-14 bg-slate-950 border border-slate-700 rounded-t-lg"></div>
                   {selected.includes('whiteFlood') && (
-                    <div className="absolute -right-6 top-8 w-72 h-40 bg-white/45 blur-2xl rotate-[-8deg] origin-left animate-pulse"></div>
+                    <div className="absolute left-20 top-9 h-28 w-48 bg-white/40 blur-2xl animate-pulse md:w-56"></div>
                   )}
                   {selected.includes('amberPath') && (
                     <div className="absolute -right-4 top-12 w-48 h-24 bg-amber-300/20 blur-xl rotate-[-5deg] origin-left"></div>
@@ -10394,7 +10501,7 @@
             <div className="h-full bg-gradient-to-r from-yellow-400 via-pink-400 to-cyan-300 transition-all duration-500" style={{width: `${progressPct}%`}}></div>
           </div>
 
-          <div className="w-full max-w-5xl grid lg:grid-cols-[0.92fr_1.08fr] gap-4 lg:gap-6 flex-1 min-h-0">
+          <div className="w-full max-w-5xl grid md:grid-cols-[0.92fr_1.08fr] gap-4 lg:gap-6 flex-1 min-h-0">
             <TriviaIllustration visual={currentVisual} feedback={feedback} questionIndex={questionIndex} />
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6 shadow-2xl flex flex-col min-h-[440px]">
@@ -10681,7 +10788,7 @@
 
       if (phase === 'briefing') {
         return (
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_0.85fr] gap-6 items-center animate-in zoom-in duration-500">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_0.85fr] gap-6 items-center animate-in zoom-in duration-500">
             <div className="text-center lg:text-left">
               <div className="inline-flex items-center gap-2 rounded-full border border-green-500/40 bg-green-950/50 px-4 py-2 text-xs font-black uppercase tracking-wider text-green-200 mb-5">
                 <ShieldCheck size={16} /> Final Ranger Mission
@@ -10796,7 +10903,7 @@
 
       if (phase === 'pledge') {
         return (
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 items-stretch animate-in slide-in-from-right duration-500">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-[0.8fr_1.2fr] gap-6 items-stretch animate-in slide-in-from-right duration-500">
             <div className="bg-slate-950 border-2 border-green-800 rounded-3xl p-6 flex flex-col justify-between shadow-[inset_0_0_70px_rgba(34,197,94,0.08)]">
               <div>
                 <div className="p-4 w-fit rounded-2xl bg-green-950 border border-green-700 text-green-300 mb-5">
@@ -10867,7 +10974,7 @@
               className="ranger-certificate-card relative w-full max-w-5xl overflow-hidden rounded-3xl border border-yellow-300/35 p-5 text-left shadow-[0_0_55px_rgba(250,204,21,0.2)] sm:p-8"
               aria-label="Printable Master Ranger certificate"
             >
-              <div className="relative z-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
+              <div className="relative z-10 grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-stretch">
                 <div className="flex flex-col justify-between rounded-3xl border border-yellow-300/25 bg-slate-950/55 p-5 sm:p-7">
                   <div>
                     <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-green-300/35 bg-green-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-green-100">
@@ -10998,7 +11105,7 @@
             <h2 className="text-2xl sm:text-3xl font-black text-white leading-relaxed">{q.title}</h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-5 flex-1 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.1fr] gap-5 flex-1 min-h-0">
             <div className="relative min-h-[360px] rounded-3xl border-2 border-slate-800 bg-slate-950 overflow-hidden shadow-[inset_0_0_80px_rgba(34,197,94,0.08)]">
               <div className={`absolute inset-0 transition-all duration-500 ${feedback && !feedback.correct ? 'bg-gradient-to-b from-slate-950 via-red-950/40 to-green-950' : 'bg-gradient-to-b from-slate-950 via-blue-950/50 to-green-950'}`}></div>
               <div className="absolute inset-0 twinkle-bg opacity-50"></div>
