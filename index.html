@@ -1274,8 +1274,8 @@
         nudge: 'The explanation after each answer is part of the study path.'
       },
       conservation: {
-        brief: 'Pass the ranger rescue test and take the final pledge.',
-        steps: ['Start the ranger test', 'Choose the best rescue actions', 'Take the Firefly Ranger pledge'],
+        brief: 'Pass the ranger rescue test, log 7 badges, and take the final pledge.',
+        steps: ['Start the ranger test', 'Choose the best rescue actions', 'Log 7 badges', 'Take the Firefly Ranger pledge'],
         nudge: 'Habitat-first choices usually protect the next generation.'
       }
     };
@@ -1367,6 +1367,20 @@
         [baseFile]: route.id
       };
     }, {});
+
+    const PLEDGE_BADGE_REQUIREMENT = 7;
+    const PLEDGE_GATE_PROMPTS = [
+      'Badge checkpoint: earn {shortfall} more {badgeWord} before the Junior Ranger pledge. Seven glowing passport stamps make the promise official.',
+      'Almost pledge-ready: collect {shortfall} more {badgeWord}, then come back with a passport bright enough for the ranger circle.',
+      'Ranger council rule: seven badges first. Add {shortfall} more {badgeWord}, and the Junior Ranger pledge gate opens.'
+    ];
+
+    const badgeWord = (count) => count === 1 ? 'badge' : 'badges';
+    const buildPledgeGatePrompt = (shortfall, attempt = 0) => (
+      PLEDGE_GATE_PROMPTS[attempt % PLEDGE_GATE_PROMPTS.length]
+        .replace('{shortfall}', String(shortfall))
+        .replace('{badgeWord}', badgeWord(shortfall))
+    );
 
     const normalizeStageToken = (value = '') => value.toLowerCase().replace(/\.html$/i, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const stageHrefFor = (stageId) => `./${STAGE_ROUTE_BY_ID[stageId]?.file || 'index.html'}`;
@@ -1940,7 +1954,35 @@
         visual: 'taxonomy'
       },
       {
-        terms: ['frontalis', 'carolinus', 'pyralis', 'reticulata', 'corruscus', 'corrusca', 'borealis', 'cruciata', 'tener', 'knulli', 'versicolor', 'spp', 'complex'],
+        terms: ['superfamily', 'Elateroidea'],
+        title: 'Superfamily',
+        explanation: 'A superfamily is a larger science group that can hold several related families.',
+        detail: 'Elateroidea is the beetle superfamily that includes fireflies and some soft-bodied beetle cousins.',
+        visual: 'taxonomy'
+      },
+      {
+        terms: ['subfamily', 'Lampyrinae'],
+        title: 'Subfamily',
+        explanation: 'A subfamily is a smaller branch inside a family.',
+        detail: 'Lampyrinae is one firefly subfamily. Photinus, the big dipper firefly genus, sits on this branch.',
+        visual: 'taxonomy'
+      },
+      {
+        terms: ['Cantharidae', 'soldier beetle', 'soldier beetles'],
+        title: 'Soldier Beetles',
+        explanation: 'Soldier beetles are soft-bodied beetles related to fireflies, but they are not fireflies.',
+        detail: 'A cousin branch helps show that close relatives can share some traits while still belonging to different families.',
+        visual: 'taxonomy'
+      },
+      {
+        terms: ['glowworm', 'glowworms', 'glow-worm', 'glow-worms'],
+        title: 'Glowworm',
+        explanation: 'Glowworm is a common name for a glowing larva or a wingless glowing female.',
+        detail: 'Some glowworms are fireflies, but the name can also be used for other glowing insects, so scientists check the family branch.',
+        visual: 'larva'
+      },
+      {
+        terms: ['scientific name', 'scientific names', 'frontalis', 'carolinus', 'pyralis', 'reticulata', 'corruscus', 'corrusca', 'borealis', 'cruciata', 'tener', 'knulli', 'versicolor', 'spp', 'complex'],
         title: 'Scientific Name Word',
         explanation: 'A scientific name word is part of the special name scientists use for one living thing or a close group.',
         detail: 'Scientific names often use Latin or Latin-like words so researchers around the world can talk about the same organism.',
@@ -2294,6 +2336,13 @@
         title: 'Mutation',
         explanation: 'A mutation is a change in genetic instructions.',
         detail: 'Most mutations are small, but over many generations some changes can help a species adapt.',
+        visual: 'taxonomy'
+      },
+      {
+        terms: ['DNA', 'genetic', 'genetic instructions'],
+        title: 'DNA',
+        explanation: 'DNA is a tiny set of instructions inside living things.',
+        detail: 'Scientists can compare DNA to learn which beetle groups are close relatives on the family tree.',
         visual: 'taxonomy'
       },
       {
@@ -3915,7 +3964,9 @@
       const glowId = `tax-glow-${id}-${rawId}`;
 
       if (id === 'lampyridae') return <FireflySpeciesSvg speciesId="generic" className={className} label="Lampyridae firefly custom SVG" />;
+      if (id === 'lampyrinae') return <FireflySpeciesSvg speciesId="generic" className={className} label="Lampyrinae firefly branch custom SVG" />;
       if (id === 'photinus') return <FireflySpeciesSvg speciesId="dipper" className={className} label="Photinus branch custom SVG" />;
+      if (id === 'pyralis') return <FireflySpeciesSvg speciesId="dipper" className={className} label="Photinus pyralis custom SVG" />;
 
       return (
         <svg viewBox="0 0 100 100" role="img" aria-label={`${id} taxonomy custom SVG`} className={className}>
@@ -3963,6 +4014,26 @@
               <path d="M32 51 L16 43 M68 51 L84 43 M31 67 L13 69 M69 67 L87 69 M38 83 L25 93 M62 83 L75 93" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
               <circle cx="43" cy="24" r="2.5" fill="#f8fafc" />
               <circle cx="57" cy="24" r="2.5" fill="#f8fafc" />
+            </>
+          )}
+          {id === 'elateroidea' && (
+            <>
+              <path d="M50 18 C66 31 76 48 75 68 C74 82 64 89 50 89 C36 89 26 82 25 68 C24 48 34 31 50 18 Z" fill="#172554" stroke="#67e8f9" strokeWidth="3" />
+              <path d="M50 20 V88 M31 49 C43 55 57 55 69 49 M34 67 C45 73 56 73 66 67" stroke="#38bdf8" strokeWidth="2.5" strokeLinecap="round" opacity="0.78" />
+              <circle cx="38" cy="35" r="8" fill="#facc15" opacity="0.86" />
+              <circle cx="62" cy="35" r="8" fill="#fb7185" opacity="0.82" />
+              <path d="M35 32 Q25 20 14 27 M65 32 Q75 20 86 27" stroke="#fde68a" strokeWidth="3" fill="none" strokeLinecap="round" />
+            </>
+          )}
+          {id === 'cantharidae' && (
+            <>
+              <ellipse cx="50" cy="59" rx="18" ry="31" fill="#b91c1c" stroke="#fecaca" strokeWidth="3" />
+              <path d="M50 31 V89 M35 55 H65 M36 70 H64" stroke="#7f1d1d" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+              <circle cx="50" cy="28" r="13" fill="#334155" stroke="#fecaca" strokeWidth="2.5" />
+              <path d="M35 49 L18 39 M65 49 L82 39 M35 65 L16 66 M65 65 L84 66 M39 82 L27 92 M61 82 L73 92" stroke="#fecaca" strokeWidth="3" strokeLinecap="round" />
+              <path d="M39 22 Q30 12 19 19 M61 22 Q70 12 81 19" stroke="#fde68a" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+              <circle cx="44" cy="27" r="2.4" fill="#f8fafc" />
+              <circle cx="56" cy="27" r="2.4" fill="#f8fafc" />
             </>
           )}
         </svg>
@@ -4107,12 +4178,168 @@
     // --- STAGE 2: FIREFLY FAMILY TREE ---
     function StageFamilyTree({ onComplete, onProgress, onNotebookStatus }) {
       const treeNodes = [
-        { id: 'animalia', rank: 'Kingdom', label: 'Animalia', kidName: 'Animals', clue: 'Many-celled living things that eat food and move during at least part of life.', visual: 'animalia', x: 50, y: 10, color: 'from-green-400 to-lime-300' },
-        { id: 'arthropoda', rank: 'Phylum', label: 'Arthropoda', kidName: 'Joint-Legged Animals', clue: 'Animals with outside skeletons and bendy jointed legs, like insects, spiders, and crabs.', visual: 'arthropoda', x: 50, y: 27, color: 'from-cyan-400 to-blue-300' },
-        { id: 'insecta', rank: 'Class', label: 'Insecta', kidName: 'Insects', clue: 'Six legs, three body parts, antennae, and usually wings as adults.', visual: 'insecta', x: 50, y: 44, color: 'from-emerald-400 to-teal-300' },
-        { id: 'coleoptera', rank: 'Order', label: 'Coleoptera', kidName: 'Beetles', clue: 'Insects with hard wing covers called elytra that protect the delicate flying wings.', visual: 'coleoptera', x: 50, y: 61, color: 'from-amber-300 to-yellow-400' },
-        { id: 'lampyridae', rank: 'Family', label: 'Lampyridae', kidName: 'Fireflies', clue: 'The firefly family: flashing fireflies, glowworms, and some daytime dark fireflies.', visual: 'lampyridae', x: 32, y: 82, color: 'from-yellow-300 to-green-300' },
-        { id: 'photinus', rank: 'Genus Branch', label: 'Photinus', kidName: 'Common Flashers', clue: 'One branch with familiar North American flashers, including some J-shaped signal makers.', visual: 'photinus', x: 68, y: 82, color: 'from-orange-300 to-yellow-300' }
+        {
+          id: 'animalia',
+          rank: 'Kingdom',
+          label: 'Animalia',
+          kidName: 'Animals',
+          clue: 'Many-celled living things that eat food and move during at least part of life.',
+          visual: 'animalia',
+          x: 50,
+          y: 7,
+          color: 'from-green-400 to-lime-300',
+          bigIdea: 'A firefly is an animal before it is anything smaller.',
+          nameFact: 'Animalia means the animal kingdom.',
+          facts: [
+            'Animalia includes insects, birds, fish, mammals, and many other animals.',
+            'Fireflies are invertebrates, so they are animals without a backbone.',
+            'Taxonomy starts broad, then follows shared body clues to smaller groups.'
+          ]
+        },
+        {
+          id: 'arthropoda',
+          rank: 'Phylum',
+          label: 'Arthropoda',
+          kidName: 'Joint-Legged Animals',
+          clue: 'Animals with outside skeletons and bendy jointed legs, like insects, spiders, and crabs.',
+          visual: 'arthropoda',
+          x: 50,
+          y: 19,
+          color: 'from-cyan-400 to-blue-300',
+          bigIdea: 'The outside skeleton is the big clue.',
+          nameFact: 'Arthropoda means jointed feet.',
+          facts: [
+            'Arthropods wear an exoskeleton on the outside instead of a backbone inside.',
+            'Insects, spiders, crabs, and millipedes are all arthropods.',
+            'A firefly larva sheds its exoskeleton as it grows.'
+          ]
+        },
+        {
+          id: 'insecta',
+          rank: 'Class',
+          label: 'Insecta',
+          kidName: 'Insects',
+          clue: 'Six legs, three body parts, antennae, and usually wings as adults.',
+          visual: 'insecta',
+          x: 50,
+          y: 31,
+          color: 'from-emerald-400 to-teal-300',
+          bigIdea: 'Count the legs: adult insects have six.',
+          nameFact: 'Insecta is the insect class.',
+          facts: [
+            'Adult insects have a head, thorax, and abdomen.',
+            'Antennae help many insects smell, touch, and sense their world.',
+            'Firefly lanterns usually glow on the abdomen.'
+          ]
+        },
+        {
+          id: 'coleoptera',
+          rank: 'Order',
+          label: 'Coleoptera',
+          kidName: 'Beetles',
+          clue: 'Insects with hard wing covers called elytra that protect the delicate flying wings.',
+          visual: 'coleoptera',
+          x: 50,
+          y: 43,
+          color: 'from-amber-300 to-yellow-400',
+          bigIdea: 'Fireflies are beetles, not flies.',
+          nameFact: 'Coleoptera means sheath wings.',
+          facts: [
+            'Elytra are hard front wings that work like covers.',
+            'When a firefly flies, the elytra lift and the softer flying wings unfold.',
+            'Beetles are one of the biggest insect orders on Earth.'
+          ]
+        },
+        {
+          id: 'elateroidea',
+          rank: 'Superfamily',
+          label: 'Elateroidea',
+          kidName: 'Glow Beetle Cousins',
+          clue: 'A beetle superfamily that includes fireflies and some related soft-bodied beetles.',
+          visual: 'elateroidea',
+          x: 50,
+          y: 55,
+          color: 'from-sky-300 to-cyan-300',
+          bigIdea: 'This is where the trail begins to split into cousin families.',
+          nameFact: 'A superfamily holds related families.',
+          facts: [
+            'Elateroidea includes Lampyridae fireflies and Cantharidae soldier beetles.',
+            'A cousin branch can be close on the tree but still not be a firefly.',
+            'Scientists use body details and DNA evidence to study these beetle relationships.'
+          ]
+        },
+        {
+          id: 'cantharidae',
+          rank: 'Cousin Family',
+          label: 'Cantharidae',
+          kidName: 'Soldier Beetles',
+          clue: 'A related beetle family. Soldier beetles are soft-bodied cousins, but they are not fireflies.',
+          visual: 'cantharidae',
+          x: 26,
+          y: 69,
+          color: 'from-rose-300 to-orange-300',
+          bigIdea: 'Close cousin does not mean same family.',
+          nameFact: 'Cantharidae is a beetle family beside the firefly trail.',
+          facts: [
+            'Soldier beetles can have soft wing covers like fireflies.',
+            'They help show how taxonomy separates cousin groups.',
+            'This branch adds breadth: the tree shows one nearby family that is not Lampyridae.'
+          ]
+        },
+        {
+          id: 'lampyridae',
+          rank: 'Family',
+          label: 'Lampyridae',
+          kidName: 'Fireflies',
+          clue: 'The firefly family: flashing fireflies, glowworms, and some daytime dark fireflies.',
+          visual: 'lampyridae',
+          x: 62,
+          y: 69,
+          color: 'from-yellow-300 to-green-300',
+          bigIdea: 'Lampyridae is the true firefly family branch.',
+          nameFact: 'Lampyridae is the scientific family name for fireflies.',
+          facts: [
+            'Fireflies are also called lightning bugs, but they are beetles.',
+            'Many species use bioluminescence to signal to mates or warn predators.',
+            'Some adult Lampyridae are dark fireflies that use pheromones instead of bright flashes.'
+          ]
+        },
+        {
+          id: 'lampyrinae',
+          rank: 'Subfamily',
+          label: 'Lampyrinae',
+          kidName: 'Flasher Subfamily',
+          clue: 'A smaller branch inside Lampyridae that includes the familiar Photinus fireflies.',
+          visual: 'lampyrinae',
+          x: 50,
+          y: 83,
+          color: 'from-lime-300 to-emerald-300',
+          bigIdea: 'A subfamily zooms in inside the firefly family.',
+          nameFact: 'Lampyrinae is one smaller branch inside Lampyridae.',
+          facts: [
+            'Lampyrinae includes several well-known flashing fireflies.',
+            'Subfamily names often end in -inae.',
+            'Smaller branches help scientists compare fireflies that look or signal in similar ways.'
+          ]
+        },
+        {
+          id: 'photinus',
+          rank: 'Genus',
+          label: 'Photinus',
+          kidName: 'Common Flashers',
+          clue: 'A genus with familiar North American flashers, including the big dipper firefly, Photinus pyralis.',
+          visual: 'photinus',
+          x: 50,
+          y: 95,
+          color: 'from-orange-300 to-yellow-300',
+          bigIdea: 'Photinus is a smaller branch with species that have their own flash patterns.',
+          nameFact: 'Photinus is the first word in Photinus pyralis.',
+          facts: [
+            'Photinus pyralis males make a J-shaped flash path in early evening.',
+            'Species-specific flash patterns help the right fireflies find each other.',
+            'The species word pyralis finishes the scientific name of the big dipper firefly.'
+          ]
+        }
       ];
 
       const tiles = [
@@ -4120,8 +4347,11 @@
         { id: 'arthropoda', title: 'Arthropod', subtitle: 'Outer skeleton and jointed legs', visual: 'arthropoda' },
         { id: 'insecta', title: 'Insect', subtitle: 'Six legs and antennae', visual: 'insecta' },
         { id: 'coleoptera', title: 'Beetle', subtitle: 'Hard wing covers', visual: 'coleoptera' },
+        { id: 'elateroidea', title: 'Elateroidea', subtitle: 'Superfamily of beetle cousins', visual: 'elateroidea' },
+        { id: 'cantharidae', title: 'Soldier Beetles', subtitle: 'Related cousin family', visual: 'cantharidae' },
         { id: 'lampyridae', title: 'Firefly Family', subtitle: 'Lampyridae', visual: 'lampyridae' },
-        { id: 'photinus', title: 'Photinus Branch', subtitle: 'One group of flashers', visual: 'photinus' }
+        { id: 'lampyrinae', title: 'Lampyrinae', subtitle: 'Firefly subfamily', visual: 'lampyrinae' },
+        { id: 'photinus', title: 'Photinus Genus', subtitle: 'Big dipper flashers', visual: 'photinus' }
       ];
 
       const treeNodeIds = treeNodes.map(node => node.id);
@@ -4165,6 +4395,20 @@
 
       const getPlacedTile = (nodeId) => tiles.find(tile => tile.id === placements[nodeId]);
       const usedTileIds = Object.values(placements);
+      const nodeById = treeNodes.reduce((lookup, node) => {
+        lookup[node.id] = node;
+        return lookup;
+      }, {});
+      const trailSegments = [
+        ['animalia', 'arthropoda'],
+        ['arthropoda', 'insecta'],
+        ['insecta', 'coleoptera'],
+        ['coleoptera', 'elateroidea'],
+        ['elateroidea', 'cantharidae'],
+        ['elateroidea', 'lampyridae'],
+        ['lampyridae', 'lampyrinae'],
+        ['lampyrinae', 'photinus']
+      ];
 
       useEffect(() => {
         const selected = tiles.find(tile => tile.id === selectedTile);
@@ -4192,7 +4436,7 @@
               Firefly Family Tree Trail
             </h2>
             <p className="text-slate-300 max-w-3xl mx-auto">
-              Build the science family tree that shows why a firefly is a beetle, not a fly. Place each clue on the glowing branch where it belongs.
+              Build the science family tree that shows why a firefly is a beetle, not a fly. Follow the main trail and one cousin branch by placing each clue where it belongs.
             </p>
             <div className="sm:hidden mt-4 inline-flex items-center gap-3 bg-slate-900/90 border border-slate-700 rounded-full px-4 py-2">
               <span className="text-xs text-slate-400 font-black uppercase tracking-wider">Tree Glow</span>
@@ -4200,13 +4444,67 @@
             </div>
           </div>
 
+          <section className="relative shrink-0 mb-5 overflow-hidden rounded-3xl border border-cyan-300/25 bg-slate-900/95 p-4 shadow-[0_0_38px_rgba(34,211,238,0.12)] sm:p-5" aria-live="polite">
+            <div className="absolute inset-0 twinkle-bg opacity-20"></div>
+            <div className={`absolute -right-16 -top-24 h-52 w-52 rounded-full bg-gradient-to-r ${activeNode.color} opacity-20 blur-3xl`}></div>
+            <div className="relative grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.35fr] xl:grid-cols-[0.82fr_1.42fr_0.92fr]">
+              <div className="flex items-center gap-4">
+                <div className="h-24 w-24 shrink-0 rounded-3xl border border-slate-700 bg-slate-950/85 p-2 shadow-[inset_0_0_28px_rgba(250,204,21,0.08)] sm:h-28 sm:w-28">
+                  <TaxonomySvg id={activeNode.visual} className="h-full w-full" />
+                </div>
+                <div className="min-w-0">
+                  <div className={`mb-2 inline-flex rounded-full bg-gradient-to-r ${activeNode.color} px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-950`}>
+                    {activeNode.rank}
+                  </div>
+                  <h3 className="break-words text-2xl font-black leading-tight text-white sm:text-3xl">{activeNode.label}</h3>
+                  <p className="mt-1 text-sm font-black text-yellow-300">{activeNode.kidName}</p>
+                </div>
+              </div>
+
+              <div className="min-w-0 border-y border-slate-800 py-4 lg:border-y-0 lg:border-l lg:py-0 lg:pl-5">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-100">Field Guide Detail</p>
+                <p className="text-sm font-semibold leading-relaxed text-slate-200 sm:text-base">{activeNode.clue}</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {activeNode.facts.map((fact, index) => (
+                    <p key={index} className="rounded-2xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-xs font-semibold leading-relaxed text-slate-300">
+                      {fact}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 xl:grid-cols-1">
+                <div className="rounded-2xl border border-green-300/20 bg-green-300/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-green-100">Big Idea</p>
+                  <p className="mt-1 text-sm font-black leading-snug text-green-200">{activeNode.bigIdea}</p>
+                </div>
+                <div className="rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-yellow-100">Name Clue</p>
+                  <p className="mt-1 text-sm font-black leading-snug text-yellow-100">{activeNode.nameFact}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-5 flex-1 min-h-0">
-            <div className="relative bg-slate-950 border-2 border-slate-800 rounded-3xl overflow-hidden min-h-[520px] shadow-[inset_0_0_80px_rgba(34,197,94,0.08)]">
+            <div className="relative bg-slate-950 border-2 border-slate-800 rounded-3xl overflow-hidden min-h-[800px] shadow-[inset_0_0_80px_rgba(34,197,94,0.08)]">
               <div className="absolute inset-0 twinkle-bg opacity-50"></div>
               <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-green-950/70 via-teal-950/20 to-transparent"></div>
               <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full pointer-events-none">
-                <path d="M50 14 L50 24 M50 31 L50 41 M50 48 L50 58 M50 65 L35 78 M50 65 L65 78" stroke="rgba(250,204,21,0.32)" strokeWidth="1.2" strokeLinecap="round" />
-                <path d="M50 14 L50 24 M50 31 L50 41 M50 48 L50 58 M50 65 L35 78 M50 65 L65 78" stroke="rgba(74,222,128,0.75)" strokeWidth="0.45" strokeLinecap="round" strokeDasharray="2 4" className="animate-pulse" style={{ opacity: Math.max(0.25, correctCount / treeNodes.length) }} />
+                {trailSegments.map(([fromId, toId]) => {
+                  const from = nodeById[fromId];
+                  const to = nodeById[toId];
+                  const midY = (from.y + to.y) / 2;
+                  const path = from.x === to.x
+                    ? `M${from.x} ${from.y + 3} L${to.x} ${to.y - 3}`
+                    : `M${from.x} ${from.y + 4} C${from.x} ${midY} ${to.x} ${midY} ${to.x} ${to.y - 4}`;
+                  return (
+                    <g key={`${fromId}-${toId}`}>
+                      <path d={path} stroke="rgba(250,204,21,0.32)" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                      <path d={path} stroke="rgba(74,222,128,0.75)" strokeWidth="0.45" strokeLinecap="round" strokeDasharray="2 4" className="animate-pulse" fill="none" style={{ opacity: Math.max(0.25, correctCount / treeNodes.length) }} />
+                    </g>
+                  );
+                })}
               </svg>
 
               {treeNodes.map(node => {
@@ -4218,7 +4516,7 @@
                   <button
                     key={node.id}
                     onClick={() => handleNodeClick(node.id)}
-                    className={`absolute -translate-x-1/2 -translate-y-1/2 w-[150px] sm:w-[178px] rounded-2xl border-2 p-3 text-left transition-all duration-300 backdrop-blur-md group
+                    className={`absolute -translate-x-1/2 -translate-y-1/2 w-[138px] sm:w-[160px] rounded-2xl border-2 p-2.5 text-left transition-all duration-300 backdrop-blur-md group
                       ${isCorrect ? 'bg-green-950/80 border-green-300 shadow-[0_0_26px_rgba(74,222,128,0.55)]' : isWrong ? 'bg-red-950/80 border-red-400 shadow-[0_0_20px_rgba(248,113,113,0.35)]' : isActive ? 'bg-slate-800/90 border-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.35)]' : 'bg-slate-900/90 border-slate-700 hover:border-yellow-400'}`}
                     style={{ left: `${node.x}%`, top: `${node.y}%` }}
                   >
@@ -4282,32 +4580,6 @@
                       </button>
                     );
                   })}
-                </div>
-              </div>
-
-              <div className="bg-slate-900 border border-slate-700 rounded-3xl p-5 flex-1 overflow-y-auto custom-scrollbar">
-                <div className={`inline-flex px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r ${activeNode.color} text-slate-950 mb-3`}>
-                  {activeNode.rank}
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="h-24 w-24 rounded-3xl bg-slate-950/80 border border-slate-700 p-2 shrink-0">
-                    <TaxonomySvg id={activeNode.visual} className="h-full w-full" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-2xl font-black text-white mb-1">{activeNode.label}</h3>
-                    <p className="text-yellow-300 font-bold mb-3">{activeNode.kidName}</p>
-                  </div>
-                </div>
-                <p className="text-slate-300 leading-relaxed text-sm bg-slate-950/70 border border-slate-800 rounded-2xl p-4">{activeNode.clue}</p>
-                <div className="mt-4 grid grid-cols-2 gap-3 text-center">
-                  <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">Big Idea</p>
-                    <p className="text-sm font-bold text-green-300">Fireflies are beetles</p>
-                  </div>
-                  <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">Family Name</p>
-                    <p className="text-sm font-bold text-yellow-300">Lampyridae</p>
-                  </div>
                 </div>
               </div>
 
@@ -10105,6 +10377,8 @@
       const [rangerName, setRangerName] = useState('');
       const [certificateIssuedAt, setCertificateIssuedAt] = useState(null);
       const [shareStatus, setShareStatus] = useState('');
+      const [pledgeGateMessage, setPledgeGateMessage] = useState('');
+      const [pledgeGateAttempt, setPledgeGateAttempt] = useState(0);
 
       const questions = [
         {
@@ -10172,6 +10446,12 @@
         'I will share what I learn and speak up for wild places.'
       ];
 
+      const passed = score >= 4;
+      const pledgeBadgeShortfall = Math.max(0, PLEDGE_BADGE_REQUIREMENT - earnedCount);
+      const canTakePledge = pledgeBadgeShortfall === 0;
+      const pledgeBadgeProgress = Math.min(earnedCount, PLEDGE_BADGE_REQUIREMENT);
+      const pledgeBadgeStatus = `${pledgeBadgeProgress}/${PLEDGE_BADGE_REQUIREMENT}`;
+
       const handleStart = () => {
         setCurrentQ(0);
         setScore(0);
@@ -10181,6 +10461,8 @@
         setPledgedLines([]);
         setCertificateIssuedAt(null);
         setShareStatus('');
+        setPledgeGateMessage('');
+        setPledgeGateAttempt(0);
         setPhase('quiz');
       };
 
@@ -10209,14 +10491,29 @@
         setPledgedLines(prev => prev.includes(line) ? prev.filter(item => item !== line) : [...prev, line]);
       };
 
+      const handlePledgeAttempt = () => {
+        if (!canTakePledge) {
+          setPledgeGateMessage(buildPledgeGatePrompt(pledgeBadgeShortfall, pledgeGateAttempt));
+          setPledgeGateAttempt(attempt => attempt + 1);
+          return;
+        }
+        setPledgeGateMessage('');
+        setPhase('pledge');
+      };
+
       const completePledge = () => {
+        if (!canTakePledge) {
+          setPledgeGateMessage(buildPledgeGatePrompt(pledgeBadgeShortfall, pledgeGateAttempt));
+          setPledgeGateAttempt(attempt => attempt + 1);
+          setPhase('result');
+          return;
+        }
         setCertificateIssuedAt(previous => previous || new Date());
         setShareStatus('');
         setPhase('complete');
         onComplete();
       };
 
-      const passed = score >= 4;
       const q = questions[currentQ];
       const habitatHealth = Math.min(100, 35 + score * 13 + (feedback?.correct ? 6 : 0));
       const pledgeReady = passed && pledgedLines.length === pledgeLines.length && rangerName.trim().length > 0;
@@ -10257,26 +10554,32 @@
 
       useEffect(() => {
         const pledgePhase = phase === 'pledge' || phase === 'complete';
+        const pledgeGatePhase = phase === 'result' && passed && !canTakePledge;
         onProgress?.({
-          value: pledgePhase ? pledgedLines.length : score,
-          total: pledgePhase ? pledgeLines.length : questions.length,
-          label: pledgePhase ? `${pledgedLines.length}/${pledgeLines.length} pledge promises` : `${score}/${questions.length} rescue choices`,
+          value: pledgePhase ? pledgedLines.length : pledgeGatePhase ? pledgeBadgeProgress : score,
+          total: pledgePhase ? pledgeLines.length : pledgeGatePhase ? PLEDGE_BADGE_REQUIREMENT : questions.length,
+          label: pledgePhase ? `${pledgedLines.length}/${pledgeLines.length} pledge promises` : pledgeGatePhase ? `${pledgeBadgeStatus} badges for pledge` : `${score}/${questions.length} rescue choices`,
           nudge: phase === 'complete'
             ? 'Master Ranger certificate is ready to print, save, or share.'
             : phase === 'pledge'
               ? 'Tap each promise, then sign your ranger name to finish.'
               : phase === 'result'
-                ? passed ? 'You passed the test. Take the pledge to finish.' : 'Retake the test and aim for four strong choices.'
+                ? passed
+                  ? canTakePledge
+                    ? 'You passed the test. Take the pledge to finish.'
+                    : `You passed the test. Earn ${pledgeBadgeShortfall} more ${badgeWord(pledgeBadgeShortfall)} before the Junior Ranger pledge unlocks.`
+                  : 'Retake the test and aim for four strong choices.'
                 : phase === 'quiz'
                   ? feedback ? 'Read the ranger lesson, then continue to the next mission.' : 'Choose the action that protects habitat first.'
                   : 'Start the final ranger test when you are ready.',
           steps: [
             { label: 'Start the ranger test', status: phase === 'briefing' ? 'active' : 'done' },
             { label: 'Choose the best rescue actions', status: passed ? 'done' : phase === 'quiz' || phase === 'result' ? 'active' : 'locked' },
-            { label: 'Take the Firefly Ranger pledge', status: phase === 'complete' ? 'done' : passed ? 'active' : 'locked' }
+            { label: `Log ${PLEDGE_BADGE_REQUIREMENT} badges`, status: canTakePledge ? 'done' : passed && phase === 'result' ? 'active' : 'locked' },
+            { label: 'Take the Firefly Ranger pledge', status: phase === 'complete' ? 'done' : passed && canTakePledge ? 'active' : 'locked' }
           ]
         });
-      }, [phase, score, passed, pledgedLines.length, feedback?.correct, rangerName, onProgress]);
+      }, [phase, score, passed, pledgedLines.length, feedback?.correct, rangerName, canTakePledge, pledgeBadgeProgress, pledgeBadgeStatus, pledgeBadgeShortfall, onProgress]);
 
       if (phase === 'briefing') {
         return (
@@ -10289,12 +10592,13 @@
                 Rescue the firefly meadow
               </h2>
               <p className="text-lg text-slate-300 leading-relaxed max-w-2xl">
-                Choose the best ranger action in five real-life firefly problems. Get at least 4 correct, then take the pledge to become a Master Ranger.
+                Choose the best ranger action in five real-life firefly problems. Get at least 4 correct and log 7 badges, then take the pledge to become a Master Ranger.
               </p>
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-4 gap-3">
                 {[
                   ['5', 'rescue choices'],
                   ['4', 'needed to pass'],
+                  [String(PLEDGE_BADGE_REQUIREMENT), 'badges to pledge'],
                   ['1', 'ranger pledge']
                 ].map(([value, label]) => (
                   <div key={label} className="bg-slate-900 border border-slate-700 rounded-2xl p-4 text-center">
@@ -10340,8 +10644,35 @@
             </h2>
             <p className="text-lg text-slate-300 max-w-xl mb-6">
               You made <strong>{score} out of {questions.length}</strong> strong conservation choices.
-              {passed ? ' One last step: take the Firefly Ranger pledge.' : ' You need 4 strong choices to unlock the pledge and earn the Master Ranger badge.'}
+              {passed
+                ? canTakePledge
+                  ? ' One last step: take the Firefly Ranger pledge.'
+                  : ` You passed the test. Earn ${pledgeBadgeShortfall} more ${badgeWord(pledgeBadgeShortfall)} before the Junior Ranger pledge unlocks.`
+                : ' You need 4 strong choices to unlock the pledge and earn the Master Ranger badge.'}
             </p>
+            {passed && (
+              <div className={`mb-4 w-full max-w-xl rounded-3xl border p-4 text-left ${canTakePledge ? 'border-green-400/45 bg-green-950/35' : 'border-yellow-300/45 bg-yellow-300/10'}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 rounded-2xl p-2 ${canTakePledge ? 'bg-green-400 text-slate-950' : 'bg-yellow-300 text-slate-950'}`}>
+                    {canTakePledge ? <CheckCircle size={20} /> : <Award size={20} />}
+                  </div>
+                  <div>
+                    <p className={`text-xs font-black uppercase tracking-wider ${canTakePledge ? 'text-green-200' : 'text-yellow-200'}`}>Junior Ranger pledge checkpoint</p>
+                    <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-200">
+                      Passport badges: <span className="font-black text-white">{pledgeBadgeStatus}</span>. {canTakePledge ? 'You are cleared for the pledge circle.' : `Collect ${pledgeBadgeShortfall} more ${badgeWord(pledgeBadgeShortfall)} anywhere in the academy, then return to pledge.`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {pledgeGateMessage && (
+              <div role="status" aria-live="polite" className="mb-6 w-full max-w-xl rounded-3xl border border-amber-300/50 bg-amber-300/10 p-4 text-left shadow-[0_0_20px_rgba(250,204,21,0.16)]">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={22} className="mt-0.5 shrink-0 text-amber-200" />
+                  <p className="text-sm font-bold leading-relaxed text-amber-50">{pledgeGateMessage}</p>
+                </div>
+              </div>
+            )}
             <div className="flex flex-wrap justify-center gap-3 max-w-2xl mb-6">
               {earnedTools.length ? earnedTools.map(tool => (
                 <span key={tool} className="px-3 py-2 rounded-full bg-green-950 border border-green-700 text-green-200 text-sm font-bold">
@@ -10353,7 +10684,7 @@
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               {passed && (
-                <button onClick={() => setPhase('pledge')} className="px-7 py-3 rounded-full font-black text-slate-900 bg-yellow-400 hover:bg-yellow-300 transition-all flex items-center gap-2 justify-center shadow-[0_0_15px_rgba(250,204,21,0.45)]">
+                <button onClick={handlePledgeAttempt} className={`px-7 py-3 rounded-full font-black transition-all flex items-center gap-2 justify-center shadow-[0_0_15px_rgba(250,204,21,0.32)] ${canTakePledge ? 'text-slate-900 bg-yellow-400 hover:bg-yellow-300' : 'text-yellow-100 bg-slate-900 border border-yellow-300/45 hover:bg-slate-800'}`}>
                   Take Ranger Pledge <ShieldCheck size={18} />
                 </button>
               )}

@@ -81,11 +81,55 @@ async function answerCorrectly(page, answer, continueLabel = /Next Mission|See R
   await page.getByRole('button', { name: continueLabel }).click();
 }
 
+async function seedBadgePassport(page, badgeIds) {
+  await page.evaluate((ids) => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    window.localStorage.setItem('firefly-academy-earned-badges', JSON.stringify(ids));
+  }, badgeIds);
+  await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
+}
+
+async function passRangerTest(page) {
+  await page.getByRole('button', { name: /Start Ranger Test/ }).click();
+
+  await answerCorrectly(page, /Turn the extra light off/);
+  await answerCorrectly(page, /Leave some leaves and logs/);
+  await answerCorrectly(page, /Dump standing water/);
+  await answerCorrectly(page, /Watch them for a short time/);
+  await answerCorrectly(page, /Notes about date, place, weather/);
+}
+
+async function installCertificateMocks(page) {
+  await page.evaluate(() => {
+    window.__printCalls = 0;
+    window.__sharedText = '';
+    window.print = () => {
+      window.__printCalls += 1;
+    };
+    Object.defineProperty(navigator, 'share', {
+      configurable: true,
+      value: async (data) => {
+        window.__sharedText = data.text;
+      }
+    });
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async (text) => {
+          window.__sharedText = text;
+        }
+      }
+    });
+  });
+}
+
 async function run() {
   const source = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   assert.ok(source.includes('@media print'), 'certificate should include a print stylesheet');
   assert.ok(source.includes('printable-ranger-award'), 'certificate should mark the printable award area');
   assert.ok(source.includes('showDebrief: false'), 'final pledge should not hide the certificate behind the field-report modal');
+  assert.ok(source.includes('PLEDGE_BADGE_REQUIREMENT = 7'), 'pledge should require seven earned badges');
 
   const server = createServer();
   const url = await listen(server);
@@ -106,39 +150,18 @@ async function run() {
 
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
-    await page.evaluate(() => {
-      window.__printCalls = 0;
-      window.__sharedText = '';
-      window.print = () => {
-        window.__printCalls += 1;
-      };
-      Object.defineProperty(navigator, 'share', {
-        configurable: true,
-        value: async (data) => {
-          window.__sharedText = data.text;
-        }
-      });
-      Object.defineProperty(navigator, 'clipboard', {
-        configurable: true,
-        value: {
-          writeText: async (text) => {
-            window.__sharedText = text;
-          }
-        }
-      });
-    });
-    await page.getByRole('button', { name: /Start Ranger Test/ }).click();
+    const sixBadgePassport = ['intro', 'familytree', 'science', 'glowhall', 'species', 'map'];
+    const sevenBadgePassport = [...sixBadgePassport, 'tamagotchi'];
 
-    await answerCorrectly(page, /Turn the extra light off/);
-    await answerCorrectly(page, /Leave some leaves and logs/);
-    await answerCorrectly(page, /Dump standing water/);
-    await answerCorrectly(page, /Watch them for a short time/);
-    await answerCorrectly(page, /Notes about date, place, weather/);
+    await seedBadgePassport(page, sixBadgePassport);
+    await passRangerTest(page);
+    await page.getByRole('button', { name: /Take Ranger Pledge/ }).click();
+    await page.getByText(/Badge checkpoint: earn 1 more badge before the Junior Ranger pledge/).waitFor({ timeout: 60000 });
+    assert.equal(await page.getByLabel('Ranger name').count(), 0, 'pledge form should stay locked until seven badges are earned');
+
+    await seedBadgePassport(page, sevenBadgePassport);
+    await installCertificateMocks(page);
+    await passRangerTest(page);
 
     await page.getByRole('button', { name: /Take Ranger Pledge/ }).click();
     for (const line of [

@@ -261,7 +261,7 @@ async function run() {
     await assertCompassIncludes(page, 'Mission 2/14');
     await assertCompassIncludes(page, 'Family Tree');
     await assertCompassIncludes(page, 'Build the science family tree from kingdom to firefly branch.');
-    await assertCompassIncludes(page, '0/6 branches matched');
+    await assertCompassIncludes(page, '0/9 branches matched');
     assert.equal(await storedCurrentStage(page), '1');
     await assertShellBadge(page, 'Lampyridae Lineage');
     assert.equal(await page.title(), 'Family Tree | Global Firefly Academy');
@@ -272,7 +272,7 @@ async function run() {
     await page.locator('button').filter({ hasText: 'Not a plant' }).first().click();
     await page.locator('button').filter({ hasText: 'Animalia' }).first().click();
     await page.waitForTimeout(250);
-    await assertCompassIncludes(page, '1/6 branches matched');
+    await assertCompassIncludes(page, '1/9 branches matched');
     await assertCompassIncludes(page, 'Saved to Notebook');
     assert.equal(
       await page.evaluate(() => JSON.parse(window.localStorage.getItem('firefly-academy-notebook-familytree') || '{}')?.placements?.animalia),
@@ -281,7 +281,7 @@ async function run() {
     await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
     await page.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
     await assertCompassIncludes(page, 'Mission 2/14');
-    await assertCompassIncludes(page, '1/6 branches matched');
+    await assertCompassIncludes(page, '1/9 branches matched');
     await assertCompassIncludes(page, 'Restored from Notebook');
     passport = await openPassport(page);
     const familyNotebookText = await passportStageText(passport, 'familytree');
@@ -290,12 +290,12 @@ async function run() {
     await passport.getByRole('button', { name: /Close passport/ }).click();
     await page.getByRole('button', { name: /Reset/ }).click();
     await page.waitForTimeout(250);
-    await assertCompassIncludes(page, '0/6 branches matched');
+    await assertCompassIncludes(page, '0/9 branches matched');
     assert.equal(await page.evaluate(() => window.localStorage.getItem('firefly-academy-notebook-familytree')), null);
     await page.evaluate(() => window.localStorage.setItem('firefly-academy-notebook-familytree', 'not-json'));
     await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
     await page.locator('section[aria-label="Field journal mission compass"]').waitFor({ timeout: 60000 });
-    await assertCompassIncludes(page, '0/6 branches matched');
+    await assertCompassIncludes(page, '0/9 branches matched');
     assert.ok(!(await compassText(page)).includes('Restored from Notebook'), 'corrupt notebook data should fall back without showing restored status');
 
     await openStage(page, 0);
