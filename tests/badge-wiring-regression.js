@@ -139,7 +139,7 @@ async function run() {
       ].join('\n'));
     });
 
-    const badgeButtons = await page.locator('header button[aria-label]').count();
+    const badgeButtons = await page.locator('header button[aria-label*=": earned"], header button[aria-label*=": locked"]').count();
     assert.equal(badgeButtons, 14, 'header should expose one clickable badge per section');
 
     const badgeNames = [
