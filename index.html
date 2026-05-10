@@ -235,6 +235,15 @@
           animation: surfaceSheen 1.45s ease;
         }
 
+        .academy-header {
+          transition: padding 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+        }
+
+        .badge-summary-panel {
+          max-height: 12rem;
+          transition: max-height 220ms ease, margin 180ms ease, padding 180ms ease, opacity 180ms ease, transform 180ms ease, border-color 180ms ease;
+        }
+
         .stage-progress-spark {
           position: absolute;
           top: 2rem;
@@ -638,6 +647,26 @@
           .firefly-click-cursor,
           .firefly-click-cursor * {
             cursor: default !important;
+          }
+        }
+
+        @media (max-width: 639px) {
+          .academy-header.is-scrolled {
+            padding-top: 0.55rem;
+            padding-bottom: 0.55rem;
+            box-shadow: 0 14px 32px rgba(2, 6, 23, 0.34);
+          }
+
+          .academy-header.is-scrolled .badge-summary-panel {
+            max-height: 0;
+            margin-top: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+            transform: translateY(-8px);
+            border-color: transparent;
           }
         }
 
@@ -1295,11 +1324,12 @@
           return [];
         }
       });
-      const [activeBadgeId, setActiveBadgeId] = useState('intro');
+      const [activeBadgeId, setActiveBadgeId] = useState(() => STAGE_ROUTES[readStoredCurrentStage()]?.id || 'intro');
       const [badgeCelebration, setBadgeCelebration] = useState(null);
       const [fieldStamp, setFieldStamp] = useState(null);
       const [tapRipples, setTapRipples] = useState([]);
       const [stageProgress, setStageProgress] = useState({});
+      const [shellScrolled, setShellScrolled] = useState(false);
       const stageNavRef = useRef(null);
       const celebrationTimerRef = useRef(null);
       const fieldStampTimerRef = useRef(null);
@@ -1327,6 +1357,7 @@
 
       const activeBadge = stages.find(stage => stage.id === activeBadgeId) || stages[0];
       const currentStageMeta = stages[currentStage] || stages[0];
+      const activeBadgeIsCurrent = activeBadge.id === currentStageMeta.id;
       const celebrationStage = badgeCelebration ? stages.find(stage => stage.id === badgeCelebration.stageId) : null;
       const fieldStampStage = fieldStamp ? stages.find(stage => stage.id === fieldStamp.stageId) : null;
       const stageGlow = currentStageMeta.badge.colors[2] || currentStageMeta.badge.colors[0];
@@ -1427,9 +1458,24 @@
       }, [currentStage, stages.length]);
 
       useEffect(() => {
+        setActiveBadgeId(currentStageMeta.id);
+      }, [currentStageMeta.id]);
+
+      useEffect(() => {
+        document.title = `${currentStageMeta.title} | Global Firefly Academy`;
+      }, [currentStageMeta.title]);
+
+      useEffect(() => {
         const activeStageButton = stageNavRef.current?.querySelector(`[data-stage-index="${currentStage}"]`);
         activeStageButton?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }, [currentStage]);
+
+      useEffect(() => {
+        const handleScroll = () => setShellScrolled(window.scrollY > 48);
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+      }, []);
 
       useEffect(() => {
         const handlePopState = (event) => {
@@ -1478,7 +1524,7 @@
           <BadgeCelebration stage={celebrationStage} token={badgeCelebration?.token} />
           <FieldNotebookStamp stage={fieldStampStage} token={fieldStamp?.token} />
           
-          <header className="p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 shadow-lg">
+          <header className={`academy-header ${shellScrolled ? 'is-scrolled' : ''} p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 shadow-lg`}>
             <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-yellow-500/20 rounded-xl border border-yellow-500/30">
@@ -1510,11 +1556,14 @@
               </div>
             </div>
 
-            <div className="polished-surface mt-4 max-w-5xl mx-auto bg-slate-950/75 border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-4 shadow-xl">
+            <div className="badge-summary-panel polished-surface mt-4 max-w-5xl mx-auto bg-slate-950/75 border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-4 shadow-xl">
               <BadgeIcon stage={activeBadge} earned={isBadgeEarned(activeBadge.id)} className="h-16 w-16 shrink-0" />
               <div className="flex-1 text-center sm:text-left min-w-0">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                   <h2 className="text-lg sm:text-xl font-black text-white">{activeBadge.badge.name}</h2>
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${activeBadgeIsCurrent ? 'bg-yellow-300 text-slate-950' : 'bg-cyan-400/10 text-cyan-200 border border-cyan-300/20'}`}>
+                    {activeBadgeIsCurrent ? 'Current Mission' : 'Badge Preview'}
+                  </span>
                   <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${isBadgeEarned(activeBadge.id) ? 'bg-green-400 text-slate-950' : 'bg-slate-800 text-slate-300 border border-slate-700'}`}>
                     {isBadgeEarned(activeBadge.id) ? 'Earned' : 'Locked'}
                   </span>
