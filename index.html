@@ -37,7 +37,7 @@
       Bug, Map as MapIcon, ShieldCheck, Award, Zap, LightbulbOff, 
       MapPin, CheckCircle, AlertTriangle, ArrowRight, Target, Leaf, Globe, HeartHandshake, HelpCircle, RefreshCw, Flame,
       Fish, Waves, Trees, Sprout, Snail, Scissors, Dna, Palette, Clock, Mountain,
-      Search, FileText, Building, Car, Flashlight, ChevronDown, ChevronUp, X
+      Search, FileText, Building, Car, Flashlight, ChevronDown, ChevronUp, X, Printer, Share2
     } from 'lucide-react';
 
     // Custom CSS for scientifically accurate(ish) firefly flashing animations
@@ -692,6 +692,79 @@
 
         @media (min-width: 640px) {
           .stage-progress-spark { top: 2rem; }
+        }
+
+        .ranger-certificate-card {
+          background:
+            radial-gradient(circle at 18% 20%, rgba(250, 204, 21, 0.16), transparent 24%),
+            radial-gradient(circle at 86% 10%, rgba(34, 197, 94, 0.16), transparent 22%),
+            linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(6, 78, 59, 0.72));
+        }
+
+        .ranger-certificate-card::before {
+          content: "";
+          position: absolute;
+          inset: 1rem;
+          border: 1px solid rgba(250, 204, 21, 0.24);
+          border-radius: 1.35rem;
+          pointer-events: none;
+        }
+
+        @media print {
+          @page {
+            margin: 0.35in;
+          }
+
+          body {
+            background: white !important;
+          }
+
+          body * {
+            visibility: hidden !important;
+          }
+
+          .printable-ranger-award,
+          .printable-ranger-award * {
+            visibility: visible !important;
+          }
+
+          .printable-ranger-award {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+            min-height: auto !important;
+            padding: 0 !important;
+            background: white !important;
+          }
+
+          .printable-ranger-award .no-print {
+            display: none !important;
+            visibility: hidden !important;
+          }
+
+          .ranger-certificate-card {
+            min-height: 9.25in !important;
+            border: 3px solid #14532d !important;
+            background: white !important;
+            color: #0f172a !important;
+            box-shadow: none !important;
+            break-inside: avoid;
+          }
+
+          .ranger-certificate-card::before {
+            border-color: #ca8a04 !important;
+          }
+
+          .ranger-certificate-card p,
+          .ranger-certificate-card h2,
+          .ranger-certificate-card h3,
+          .ranger-certificate-card span,
+          .ranger-certificate-card strong {
+            color: #0f172a !important;
+            text-shadow: none !important;
+          }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -1939,7 +2012,8 @@
       const unlockBadge = (stageId) => {
         setEarnedBadgeIds(prev => prev.includes(stageId) ? prev : [...prev, stageId]);
       };
-      const earnBadge = (stageId) => {
+      const earnBadge = (stageId, options = {}) => {
+        const { showDebrief = true } = options;
         const alreadyEarned = earnedBadgeIds.includes(stageId);
         unlockBadge(stageId);
         setActiveBadgeId(stageId);
@@ -1947,15 +2021,15 @@
           const token = Date.now();
           window.clearTimeout(celebrationTimerRef.current);
           setBadgeCelebration({ stageId, token });
-          setMissionDebrief({ stageId, token });
+          if (showDebrief) setMissionDebrief({ stageId, token });
           celebrationTimerRef.current = window.setTimeout(() => setBadgeCelebration(null), 2450);
         }
         window.clearTimeout(fieldStampTimerRef.current);
         setFieldStamp({ stageId, token: Date.now() });
         fieldStampTimerRef.current = window.setTimeout(() => setFieldStamp(null), 1850);
       };
-      const completeStage = (stageId) => {
-        earnBadge(stageId);
+      const completeStage = (stageId, options = {}) => {
+        earnBadge(stageId, options);
         const stageIndex = stages.findIndex(stage => stage.id === stageId);
         setCurrentStage(Math.min(stageIndex + 1, stages.length - 1));
       };
@@ -2240,7 +2314,7 @@
               {currentStage === 10 && <StageEcosystem onComplete={() => completeStage('ecosystem')} onEarn={() => earnBadge('ecosystem')} onProgress={(progress) => reportStageProgress('ecosystem', progress)} />}
               {currentStage === 11 && <StageSanctuary onComplete={() => completeStage('sanctuary')} onProgress={(progress) => reportStageProgress('sanctuary', progress)} onNotebookStatus={(status) => reportNotebookStatus('sanctuary', status)} />}
               {currentStage === 12 && <StageTrivia onComplete={() => completeStage('trivia')} onSkip={advanceStage} onProgress={(progress) => reportStageProgress('trivia', progress)} />}
-              {currentStage === 13 && <StageConservation onComplete={() => completeStage('conservation')} onRestart={() => setCurrentStage(0)} onProgress={(progress) => reportStageProgress('conservation', progress)} />}
+              {currentStage === 13 && <StageConservation onComplete={() => completeStage('conservation', { showDebrief: false })} onRestart={() => setCurrentStage(0)} onOpenPassport={() => setNotebookDrawerOpen(true)} earnedCount={earnedCount} totalBadges={stages.length} savedCount={savedStageIds.length} onProgress={(progress) => reportStageProgress('conservation', progress)} />}
             </div>
           </main>
         </div>
@@ -8125,7 +8199,7 @@
     }
 
     // --- STAGE 10: CONSERVATION RANGER TEST ---
-    function StageConservation({ onComplete, onRestart, onProgress }) {
+    function StageConservation({ onComplete, onRestart, onOpenPassport, onProgress, earnedCount = 0, totalBadges = 14, savedCount = 0 }) {
       const [currentQ, setCurrentQ] = useState(0);
       const [score, setScore] = useState(0);
       const [phase, setPhase] = useState('briefing');
@@ -8134,6 +8208,8 @@
       const [earnedTools, setEarnedTools] = useState([]);
       const [pledgedLines, setPledgedLines] = useState([]);
       const [rangerName, setRangerName] = useState('');
+      const [certificateIssuedAt, setCertificateIssuedAt] = useState(null);
+      const [shareStatus, setShareStatus] = useState('');
 
       const questions = [
         {
@@ -8208,6 +8284,8 @@
         setSelectedOption(null);
         setEarnedTools([]);
         setPledgedLines([]);
+        setCertificateIssuedAt(null);
+        setShareStatus('');
         setPhase('quiz');
       };
 
@@ -8237,6 +8315,8 @@
       };
 
       const completePledge = () => {
+        setCertificateIssuedAt(previous => previous || new Date());
+        setShareStatus('');
         setPhase('complete');
         onComplete();
       };
@@ -8245,6 +8325,40 @@
       const q = questions[currentQ];
       const habitatHealth = Math.min(100, 35 + score * 13 + (feedback?.correct ? 6 : 0));
       const pledgeReady = passed && pledgedLines.length === pledgeLines.length && rangerName.trim().length > 0;
+      const displayName = rangerName.trim() || 'Firefly Ranger';
+      const certificateDate = useMemo(() => {
+        const date = certificateIssuedAt || new Date();
+        return new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric', year: 'numeric' }).format(date);
+      }, [certificateIssuedAt]);
+      const badgeProgressLabel = `${Math.max(earnedCount, phase === 'complete' ? 1 : 0)}/${totalBadges}`;
+      const certificateShareText = `${displayName} earned a Master Ranger certificate at Global Firefly Academy with ${score}/${questions.length} rescue choices and ${pledgedLines.length}/${pledgeLines.length} pledge promises.`;
+      const handlePrintCertificate = () => {
+        window.print();
+      };
+      const handleShareCertificate = async () => {
+        const shareData = {
+          title: `Master Ranger Certificate for ${displayName}`,
+          text: certificateShareText,
+          url: window.location.href
+        };
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+            setShareStatus('Certificate ready to share.');
+            return;
+          }
+        } catch (error) {
+          if (error?.name === 'AbortError') return;
+        }
+
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+          await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+          setShareStatus('Certificate summary copied.');
+        } catch {
+          setShareStatus('Share is not available in this browser.');
+        }
+      };
 
       useEffect(() => {
         const pledgePhase = phase === 'pledge' || phase === 'complete';
@@ -8253,7 +8367,7 @@
           total: pledgePhase ? pledgeLines.length : questions.length,
           label: pledgePhase ? `${pledgedLines.length}/${pledgeLines.length} pledge promises` : `${score}/${questions.length} rescue choices`,
           nudge: phase === 'complete'
-            ? 'Master Ranger badge complete. The academy loop is ready to restart.'
+            ? 'Master Ranger certificate is ready to print, save, or share.'
             : phase === 'pledge'
               ? 'Tap each promise, then sign your ranger name to finish.'
               : phase === 'result'
@@ -8423,22 +8537,124 @@
       }
 
       if (phase === 'complete') {
-        const displayName = rangerName.trim() || 'Firefly Ranger';
         return (
-          <div className="flex-1 flex flex-col items-center justify-center text-center animate-in zoom-in duration-700">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 blur-3xl opacity-40 rounded-full animate-pulse bg-yellow-400"></div>
-              <Award size={110} className="text-yellow-300 relative z-10 animate-bounce drop-shadow-[0_0_24px_rgba(250,204,21,1)]" />
+          <div className="printable-ranger-award flex-1 flex flex-col items-center justify-center gap-5 animate-in zoom-in duration-700">
+            <section
+              className="ranger-certificate-card relative w-full max-w-5xl overflow-hidden rounded-3xl border border-yellow-300/35 p-5 text-left shadow-[0_0_55px_rgba(250,204,21,0.2)] sm:p-8"
+              aria-label="Printable Master Ranger certificate"
+            >
+              <div className="relative z-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
+                <div className="flex flex-col justify-between rounded-3xl border border-yellow-300/25 bg-slate-950/55 p-5 sm:p-7">
+                  <div>
+                    <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-green-300/35 bg-green-300/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-green-100">
+                      <CheckCircle size={13} /> Certified Firefly Ranger
+                    </div>
+                    <p className="text-sm font-black uppercase tracking-[0.22em] text-yellow-200">Global Firefly Academy</p>
+                    <h2 className="mt-2 text-3xl font-black leading-tight text-white sm:text-5xl">Master Ranger Certificate</h2>
+                    <p className="mt-5 text-sm font-semibold uppercase tracking-wider text-slate-400">This certifies that</p>
+                    <h3 className="mt-2 break-words text-4xl font-black leading-tight text-yellow-200 sm:text-6xl">{displayName}</h3>
+                    <p className="mt-5 max-w-2xl text-base font-semibold leading-relaxed text-slate-200 sm:text-lg">
+                      completed the Firefly Ranger pledge, made evidence-based conservation choices, and is ready to help protect dark, damp, living habitat.
+                    </p>
+                  </div>
+
+                  <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                    {[
+                      ['Ranger Score', `${score}/${questions.length}`],
+                      ['Pledge Promises', `${pledgedLines.length}/${pledgeLines.length}`],
+                      ['Badges Logged', badgeProgressLabel]
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">{label}</p>
+                        <p className="mt-1 text-2xl font-black text-yellow-200">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  <div className="relative min-h-[17rem] overflow-hidden rounded-3xl border border-green-300/25 bg-slate-950/50 p-5">
+                    <div className="absolute inset-0 twinkle-bg opacity-55"></div>
+                    <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
+                      <div className="relative mb-5">
+                        <div className="absolute inset-0 rounded-full bg-yellow-300/35 blur-3xl"></div>
+                        <Award size={112} className="relative z-10 text-yellow-300 drop-shadow-[0_0_24px_rgba(250,204,21,0.95)]" />
+                      </div>
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-green-200">Master Ranger Badge</p>
+                      <p className="mt-2 text-2xl font-black text-white">Habitat first. Lights gentle. Notes careful.</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-700 bg-slate-900/75 p-5">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Passport Summary</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                        <p className="text-sm font-black text-white">Saved notebook entries</p>
+                        <p className="mt-1 text-3xl font-black text-cyan-200">{savedCount}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+                        <p className="text-sm font-black text-white">Ranger tools earned</p>
+                        <p className="mt-1 text-3xl font-black text-green-200">{earnedTools.length}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 p-4">
+                      <p className="text-sm font-bold leading-relaxed text-yellow-50">
+                        Science takeaway: firefly conservation works best when people protect darkness, leaf litter, damp soil, native plants, and gentle observation.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 rounded-3xl border border-slate-700 bg-slate-950/50 p-5 sm:grid-cols-2">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Issued</p>
+                      <p className="mt-1 text-lg font-black text-white">{certificateDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Academy Signature</p>
+                      <p className="mt-1 text-lg font-black text-yellow-200">Global Firefly Academy</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div className="no-print flex w-full max-w-5xl flex-col gap-3 rounded-3xl border border-slate-800 bg-slate-900/80 p-4 shadow-xl sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 text-center sm:text-left">
+                <p className="text-sm font-black text-white">Certificate unlocked for {displayName}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-400">Print opens your browser dialog, where you can also save as PDF.</p>
+                {shareStatus && <p className="mt-2 text-xs font-black text-cyan-200">{shareStatus}</p>}
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handlePrintCertificate}
+                  className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full bg-yellow-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-[0_0_18px_rgba(250,204,21,0.28)] transition-all hover:bg-yellow-200 active:scale-95"
+                >
+                  Print / Save PDF <Printer size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShareCertificate}
+                  className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full border border-cyan-300/35 bg-cyan-300/10 px-5 py-2.5 text-sm font-black text-cyan-100 transition-all hover:border-cyan-300/65 hover:bg-cyan-300/15 active:scale-95"
+                >
+                  Share Certificate <Share2 size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenPassport?.()}
+                  className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-950 px-5 py-2.5 text-sm font-black text-slate-100 transition-all hover:border-yellow-300/60 hover:bg-slate-800 active:scale-95"
+                >
+                  Open Passport <FileText size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onRestart}
+                  className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-800 px-5 py-2.5 text-sm font-black text-slate-100 transition-all hover:bg-slate-700 active:scale-95"
+                >
+                  Restart <RefreshCw size={16} />
+                </button>
+              </div>
             </div>
-            <h2 className="text-4xl sm:text-5xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-green-300">
-              Master Ranger {displayName}
-            </h2>
-            <p className="text-lg text-slate-300 max-w-xl mb-6">
-              Badge earned. You know the most important ranger job: make the world safer for tiny lights.
-            </p>
-            <button onClick={onRestart} className="px-8 py-3 rounded-full font-black text-slate-900 bg-yellow-400 hover:bg-yellow-300 transition-colors shadow-[0_0_15px_rgba(250,204,21,0.5)]">
-              Restart Expedition
-            </button>
           </div>
         );
       }

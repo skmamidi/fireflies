@@ -4,6 +4,7 @@
     "test:quest-compass": "node tests/quest-compass-regression.js",
     "test:light-pollution": "node tests/light-pollution-regression.js",
     "test:field-survey": "node tests/field-survey-regression.js",
-    "test": "npm run test:badges && npm run test:quest-compass && npm run test:light-pollution && npm run test:field-survey"
+    "test:certificate": "node tests/certificate-regression.js",
+    "test": "npm run test:badges && npm run test:quest-compass && npm run test:light-pollution && npm run test:field-survey && npm run test:certificate"
   }
 }
