@@ -104,6 +104,14 @@ async function clickFirstButtonContaining(page, text) {
   await page.locator('button').filter({ hasText: text }).first().click();
 }
 
+async function closeFieldReportIfOpen(page) {
+  const closeButton = page.getByRole('button', { name: /Close field report/ });
+  if (await closeButton.count()) {
+    await closeButton.click();
+    await page.waitForFunction(() => !document.querySelector('[aria-label$="field report"]'), null, { timeout: 60000 });
+  }
+}
+
 async function run() {
   const server = createServer();
   const url = await listen(server);
@@ -188,6 +196,7 @@ async function run() {
     });
     await expectBadge(page, 'Species Scout', 'earned');
     assert.equal((await storedArray(page, 'firefly-academy-session-species-studied')).length, 11);
+    await closeFieldReportIfOpen(page);
 
     await openStage(page, 5);
     await page.waitForFunction(() => {
@@ -227,11 +236,13 @@ async function run() {
     });
     await expectBadge(page, 'Field Atlas', 'earned');
     assert.equal((await storedArray(page, 'firefly-academy-session-map-stamps')).length, 11);
+    await closeFieldReportIfOpen(page);
 
     await openStage(page, 10);
     await page.getByRole('button', { name: /Health Signal/ }).click();
     await page.getByRole('button', { name: /Glow Rescue/ }).click();
     await expectBadge(page, 'Food Web Steward', 'earned');
+    await closeFieldReportIfOpen(page);
     assert.deepEqual(
       (await storedArray(page, 'firefly-academy-session-ecosystem-tabs')).sort(),
       ['action', 'importance', 'indicator']
