@@ -4644,14 +4644,14 @@
       const setSelectedId = (nextId) => setHallField('selectedId', nextId);
 
       const selected = organisms.find(org => org.id === selectedId) || organisms[0];
-      const findNextUnassignedId = (currentId, nextAssignments) => {
+      const findNextUnresolvedId = (currentId, nextAssignments) => {
         const currentIndex = organisms.findIndex(org => org.id === currentId);
         const startIndex = currentIndex >= 0 ? currentIndex + 1 : 0;
         const searchOrder = [
           ...organisms.slice(startIndex),
           ...organisms.slice(0, Math.max(startIndex - 1, 0))
         ];
-        return searchOrder.find(org => !nextAssignments[org.id])?.id || currentId;
+        return searchOrder.find(org => nextAssignments[org.id] !== org.category)?.id || currentId;
       };
       const correctCount = organisms.filter(org => assignments[org.id] === org.category).length;
       const assignedCount = Object.keys(assignments).length;
@@ -4670,7 +4670,7 @@
           return {
             ...prev,
             assignments: nextAssignments,
-            selectedId: shouldAdvance ? findNextUnassignedId(activeId, nextAssignments) : activeId
+            selectedId: shouldAdvance ? findNextUnresolvedId(activeId, nextAssignments) : activeId
           };
         });
       };
